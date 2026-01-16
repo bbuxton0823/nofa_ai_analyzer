@@ -107,8 +107,7 @@ Distribute the modified file to your team.
 | Template Support | Flexible (any NOFA format) |
 
 ## Demo Video
-
-For a full walkthrough, see [demo_video.mp4](demo_video.mp4).
+For a full walkthrough, see the [NOFA AI Analyzer Video](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/download/NOFA_AI/NOFA.AI.Video.mov) in the Releases section.
 
 ## License
 
