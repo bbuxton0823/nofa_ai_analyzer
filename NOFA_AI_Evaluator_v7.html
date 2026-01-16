@@ -1539,6 +1539,52 @@
         }
     });
 
+    // Prevent background scroll when modal is open and mouse is over modal content
+    function preventBackgroundScroll(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        // When modal is shown, prevent body scroll
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    if (!modal.classList.contains('hidden')) {
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        document.body.style.overflow = '';
+                    }
+                }
+            });
+        });
+        observer.observe(modal, { attributes: true });
+
+        // Also handle wheel events on the modal backdrop to prevent scroll-through
+        modal.addEventListener('wheel', function(e) {
+            const scrollableContent = modal.querySelector('.overflow-auto, .overflow-y-auto');
+            if (scrollableContent) {
+                const isScrollable = scrollableContent.scrollHeight > scrollableContent.clientHeight;
+                const isAtTop = scrollableContent.scrollTop === 0;
+                const isAtBottom = scrollableContent.scrollTop + scrollableContent.clientHeight >= scrollableContent.scrollHeight;
+
+                // Allow scroll if content is scrollable and not at boundaries
+                // Or if scrolling in the allowed direction at boundaries
+                if (isScrollable) {
+                    if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+                        e.preventDefault(); // Prevent scroll-through at boundaries
+                    }
+                    // Otherwise let the scroll happen naturally within the modal
+                } else {
+                    e.preventDefault(); // No scrollable content, prevent all scroll
+                }
+            }
+        }, { passive: false });
+    }
+
+    // Apply scroll prevention to all modals
+    preventBackgroundScroll('settingsModal');
+    preventBackgroundScroll('pdfViewerModal');
+    preventBackgroundScroll('commentPromptModal');
+
     // ============================================================
     // VISION ANALYSIS TOGGLE
     // ============================================================
