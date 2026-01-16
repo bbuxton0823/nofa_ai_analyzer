@@ -1497,12 +1497,47 @@
 
         updateVisionStatusText();
 
-        document.getElementById('settingsModal').classList.remove('hidden');
+        const modal = document.getElementById('settingsModal');
+        modal.classList.remove('hidden');
+
+        // Focus the modal for keyboard events
+        modal.focus();
     }
 
     function hideSettings() {
         document.getElementById('settingsModal').classList.add('hidden');
     }
+
+    // Global keyboard handler for modals (Escape to close)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            // Close any open modal
+            const settingsModal = document.getElementById('settingsModal');
+            const pdfViewerModal = document.getElementById('pdfViewerModal');
+            const evidenceModal = document.getElementById('evidenceModal');
+            const counterArgModal = document.getElementById('counterArgModal');
+            const commentPromptModal = document.getElementById('commentPromptModal');
+
+            if (settingsModal && !settingsModal.classList.contains('hidden')) {
+                hideSettings();
+            } else if (pdfViewerModal && !pdfViewerModal.classList.contains('hidden')) {
+                hidePdfViewer();
+            } else if (evidenceModal) {
+                evidenceModal.remove();
+            } else if (counterArgModal) {
+                counterArgModal.remove();
+            } else if (commentPromptModal && !commentPromptModal.classList.contains('hidden')) {
+                commentPromptModal.classList.add('hidden');
+            }
+        }
+    });
+
+    // Click outside modal to close (for Settings modal)
+    document.getElementById('settingsModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideSettings();
+        }
+    });
 
     // ============================================================
     // VISION ANALYSIS TOGGLE
