@@ -1609,23 +1609,27 @@
         document.getElementById('diagTotalChars').textContent = diag.totalCharacters > 0 ? diag.totalCharacters.toLocaleString() : '-';
         document.getElementById('diagAttachStart').textContent = diag.attachmentStartPage ? `Page ${diag.attachmentStartPage}` : 'Not detected';
 
-        // AI analysis coverage
-        document.getElementById('diagMainChars').textContent = diag.mainContentChars > 0 ? diag.mainContentChars.toLocaleString() : '-';
-        document.getElementById('diagAttachChars').textContent = diag.attachmentChars > 0 ? diag.attachmentChars.toLocaleString() : '-';
+        // AI analysis coverage - show "Pending analysis" if document loaded but not analyzed yet
+        const hasDocument = diag.totalPages > 0;
+        const hasAnalysis = diag.mainContentChars > 0 || diag.criteriaAnalyzed > 0;
+        const pendingText = hasDocument ? 'Pending analysis' : '-';
+
+        document.getElementById('diagMainChars').textContent = diag.mainContentChars > 0 ? diag.mainContentChars.toLocaleString() : pendingText;
+        document.getElementById('diagAttachChars').textContent = diag.attachmentChars > 0 ? diag.attachmentChars.toLocaleString() : pendingText;
 
         const totalToAI = diag.mainContentChars + diag.attachmentChars;
-        document.getElementById('diagTotalToAI').textContent = totalToAI > 0 ? totalToAI.toLocaleString() : '-';
+        document.getElementById('diagTotalToAI').textContent = totalToAI > 0 ? totalToAI.toLocaleString() : pendingText;
 
         // Calculate coverage percentage
         if (diag.totalCharacters > 0 && totalToAI > 0) {
             const coverage = Math.min(100, (totalToAI / diag.totalCharacters) * 100).toFixed(1);
             document.getElementById('diagCoverage').textContent = `${coverage}%`;
         } else {
-            document.getElementById('diagCoverage').textContent = '-';
+            document.getElementById('diagCoverage').textContent = pendingText;
         }
 
         // Criteria and timestamp
-        document.getElementById('diagCriteriaCount').textContent = diag.criteriaAnalyzed > 0 ? diag.criteriaAnalyzed : '-';
+        document.getElementById('diagCriteriaCount').textContent = diag.criteriaAnalyzed > 0 ? diag.criteriaAnalyzed : pendingText;
 
         if (diag.lastAnalysisTimestamp) {
             const date = new Date(diag.lastAnalysisTimestamp);
