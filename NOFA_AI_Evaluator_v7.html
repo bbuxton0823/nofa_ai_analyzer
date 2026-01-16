@@ -537,12 +537,59 @@
         VISION_IMAGE_QUALITY: 0.8,  // JPEG quality (0.8 = good balance of quality/size)
         // Auto-detection thresholds
         VISION_MIN_CHARS_PER_PAGE: 200,  // Pages with fewer chars likely have charts/images
-        VISION_CHART_KEYWORDS: ['chart', 'graph', 'figure', 'table', 'diagram', 'org chart', 'organizational chart', 'pie chart', 'bar graph', 'timeline', 'flowchart', 'infographic']
+        VISION_CHART_KEYWORDS: ['chart', 'graph', 'figure', 'table', 'diagram', 'org chart', 'organizational chart', 'pie chart', 'bar graph', 'timeline', 'flowchart', 'infographic'],
+        // Performance optimizations
+        API_RETRY_ATTEMPTS: 3,  // Number of retry attempts for failed API calls
+        API_RETRY_DELAY_MS: 1000,  // Base delay between retries (doubles each attempt)
+        API_PARALLEL_BATCH_SIZE: 3,  // Number of parallel API calls (balance speed vs rate limits)
+        RENDER_DEBOUNCE_MS: 50  // Debounce rapid render calls
     };
 
     // ============================================================
     // CONSISTENCY & CACHING UTILITIES
     // ============================================================
+
+    // In-memory cache for faster lookups (avoids repeated JSON parsing)
+    let responseCacheMap = null;
+    let cacheDirty = false;
+
+    // Initialize in-memory cache from localStorage
+    function initResponseCache() {
+        if (responseCacheMap === null) {
+            try {
+                const stored = localStorage.getItem(CONFIG.RESPONSE_CACHE_KEY);
+                responseCacheMap = stored ? new Map(Object.entries(JSON.parse(stored))) : new Map();
+            } catch (e) {
+                console.warn('Cache init error:', e);
+                responseCacheMap = new Map();
+            }
+        }
+        return responseCacheMap;
+    }
+
+    // Persist cache to localStorage (debounced to avoid frequent writes)
+    let cacheWriteTimeout = null;
+    function persistCache() {
+        if (!cacheDirty || !responseCacheMap) return;
+        if (cacheWriteTimeout) clearTimeout(cacheWriteTimeout);
+        cacheWriteTimeout = setTimeout(() => {
+            try {
+                // Convert Map to object and filter old entries
+                const now = Date.now();
+                const expiry = 24 * 60 * 60 * 1000;
+                const obj = {};
+                responseCacheMap.forEach((value, key) => {
+                    if (value.timestamp > now - expiry) {
+                        obj[key] = value;
+                    }
+                });
+                localStorage.setItem(CONFIG.RESPONSE_CACHE_KEY, JSON.stringify(obj));
+                cacheDirty = false;
+            } catch (e) {
+                console.warn('Cache persist error:', e);
+            }
+        }, 500);
+    }
 
     // Generate a deterministic hash from text (for caching AI responses)
     async function hashText(text) {
@@ -566,45 +613,34 @@
 
     // Get cached AI response by hash, or return null if not cached
     function getCachedResponse(hash, criterionId) {
-        try {
-            const cache = JSON.parse(localStorage.getItem(CONFIG.RESPONSE_CACHE_KEY) || '{}');
-            const key = `${hash}_${criterionId}`;
-            if (cache[key] && cache[key].timestamp > Date.now() - 24 * 60 * 60 * 1000) {
-                console.log(`[Cache HIT] Using cached response for ${criterionId}`);
-                return cache[key].response;
-            }
-        } catch (e) {
-            console.warn('Cache read error:', e);
+        const cache = initResponseCache();
+        const key = `${hash}_${criterionId}`;
+        const entry = cache.get(key);
+        if (entry && entry.timestamp > Date.now() - 24 * 60 * 60 * 1000) {
+            console.log(`[Cache HIT] Using cached response for ${criterionId}`);
+            return entry.response;
         }
         return null;
     }
 
     // Store AI response in cache with hash key
     function setCachedResponse(hash, criterionId, response) {
-        try {
-            const cache = JSON.parse(localStorage.getItem(CONFIG.RESPONSE_CACHE_KEY) || '{}');
-            const key = `${hash}_${criterionId}`;
-            cache[key] = {
-                response: response,
-                timestamp: Date.now()
-            };
-            // Keep cache size manageable - remove entries older than 24 hours
-            const now = Date.now();
-            for (const k in cache) {
-                if (cache[k].timestamp < now - 24 * 60 * 60 * 1000) {
-                    delete cache[k];
-                }
-            }
-            localStorage.setItem(CONFIG.RESPONSE_CACHE_KEY, JSON.stringify(cache));
-            console.log(`[Cache SET] Stored response for ${criterionId}`);
-        } catch (e) {
-            console.warn('Cache write error:', e);
-        }
+        const cache = initResponseCache();
+        const key = `${hash}_${criterionId}`;
+        cache.set(key, {
+            response: response,
+            timestamp: Date.now()
+        });
+        cacheDirty = true;
+        persistCache();
+        console.log(`[Cache SET] Stored response for ${criterionId}`);
     }
 
     // Clear the response cache (for debugging or when user wants fresh analysis)
     function clearResponseCache() {
         localStorage.removeItem(CONFIG.RESPONSE_CACHE_KEY);
+        responseCacheMap = new Map();  // Clear in-memory cache too
+        cacheDirty = false;
         console.log('[Cache CLEARED]');
         showToast('info', 'Cache Cleared', 'AI responses will be regenerated on next analysis.');
     }
@@ -1139,6 +1175,7 @@
         templateName: '',
         scoringWorkbook: null, // Parsed XLSX workbook for export
         applicationPDF: null,
+        pdfDocument: null,  // PDF.js document reference for vision rendering
         applicationText: '',
         pdfPages: [],
         projectInfo: {},
@@ -1387,10 +1424,11 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
     function init() {
+        initResponseCache();  // Initialize in-memory cache early
         loadTemplateProfiles(); // Load saved template profiles from localStorage
         updateApiStatus();
         checkForDraft();
-        render();
+        renderImmediate();  // Use immediate render for initial load (no debounce)
         setupDropZones();
     }
 
@@ -2201,20 +2239,39 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
             return;
         }
         state.applicationPDF = file;
+        state.pdfDocument = null; // Store reference for vision rendering
         showLoading('Processing PDF', `Extracting text from ${file.name}...`, true);
         try {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let fullText = '';
-            state.pdfPages = [];
-            for (let i = 1; i <= pdf.numPages; i++) {
-                updateLoadingProgress(Math.round((i / pdf.numPages) * 100), `Page ${i} of ${pdf.numPages}`);
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                state.pdfPages.push(pageText);
-                fullText += `\n--- Page ${i} ---\n${pageText}`;
+            state.pdfDocument = pdf; // Store for later vision rendering
+
+            // OPTIMIZATION: Extract pages in parallel batches for faster processing
+            const numPages = pdf.numPages;
+            const pageTexts = new Array(numPages);
+            const batchSize = 5; // Process 5 pages at a time
+
+            for (let start = 0; start < numPages; start += batchSize) {
+                const end = Math.min(start + batchSize, numPages);
+                updateLoadingProgress(Math.round((start / numPages) * 100), `Pages ${start + 1}-${end} of ${numPages}`);
+
+                // Process batch in parallel
+                const batchPromises = [];
+                for (let i = start; i < end; i++) {
+                    batchPromises.push(
+                        pdf.getPage(i + 1).then(async page => {
+                            const textContent = await page.getTextContent();
+                            return { index: i, text: textContent.items.map(item => item.str).join(' ') };
+                        })
+                    );
+                }
+                const results = await Promise.all(batchPromises);
+                results.forEach(r => { pageTexts[r.index] = r.text; });
             }
+
+            // Build full text from ordered pages
+            state.pdfPages = pageTexts;
+            let fullText = pageTexts.map((text, i) => `\n--- Page ${i + 1} ---\n${text}`).join('');
             state.applicationText = fullText;
 
             // CONSISTENCY: Compute and store document hash for tracking
@@ -2459,30 +2516,60 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
     // ============================================================
     // AI INTEGRATION
     // ============================================================
+
+    // Retry helper with exponential backoff
+    async function withRetry(fn, maxAttempts = CONFIG.API_RETRY_ATTEMPTS) {
+        let lastError;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return await fn();
+            } catch (error) {
+                lastError = error;
+                const isRetryable = error.message?.includes('rate') ||
+                                   error.message?.includes('overloaded') ||
+                                   error.message?.includes('529') ||
+                                   error.message?.includes('500') ||
+                                   error.message?.includes('timeout');
+
+                if (attempt < maxAttempts && isRetryable) {
+                    const delay = CONFIG.API_RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+                    console.log(`[API Retry] Attempt ${attempt} failed, retrying in ${delay}ms...`);
+                    await new Promise(r => setTimeout(r, delay));
+                } else if (!isRetryable) {
+                    throw error; // Don't retry non-retryable errors
+                }
+            }
+        }
+        throw lastError;
+    }
+
     async function callClaude(systemPrompt, userPrompt) {
         if (!state.apiKey) throw new Error('API key not configured');
-        const response = await fetch(CONFIG.API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': state.apiKey,
-                'anthropic-version': '2023-06-01',
-                'anthropic-dangerous-direct-browser-access': 'true'
-            },
-            body: JSON.stringify({
-                model: CONFIG.MODEL,
-                max_tokens: CONFIG.MAX_TOKENS,
-                temperature: 0,  // CRITICAL: Set to 0 for deterministic, consistent scoring
-                system: systemPrompt,
-                messages: [{ role: 'user', content: userPrompt }]
-            })
+
+        return withRetry(async () => {
+            const response = await fetch(CONFIG.API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': state.apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: CONFIG.MODEL,
+                    max_tokens: CONFIG.MAX_TOKENS,
+                    temperature: 0,  // CRITICAL: Set to 0 for deterministic, consistent scoring
+                    system: systemPrompt,
+                    messages: [{ role: 'user', content: userPrompt }]
+                })
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || `API request failed (${response.status})`);
+            }
+            const data = await response.json();
+            return data.content[0].text;
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'API request failed');
-        }
-        const data = await response.json();
-        return data.content[0].text;
     }
 
     // Call Claude with vision capability - sends images along with text
@@ -2510,29 +2597,31 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
             text: userPrompt
         });
 
-        const response = await fetch(CONFIG.API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': state.apiKey,
-                'anthropic-version': '2023-06-01',
-                'anthropic-dangerous-direct-browser-access': 'true'
-            },
-            body: JSON.stringify({
-                model: CONFIG.MODEL,
-                max_tokens: CONFIG.MAX_TOKENS,
-                temperature: 0,
-                system: systemPrompt,
-                messages: [{ role: 'user', content: messageContent }]
-            })
-        });
+        return withRetry(async () => {
+            const response = await fetch(CONFIG.API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': state.apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: CONFIG.MODEL,
+                    max_tokens: CONFIG.MAX_TOKENS,
+                    temperature: 0,
+                    system: systemPrompt,
+                    messages: [{ role: 'user', content: messageContent }]
+                })
+            });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'API request failed');
-        }
-        const data = await response.json();
-        return data.content[0].text;
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || `API request failed (${response.status})`);
+            }
+            const data = await response.json();
+            return data.content[0].text;
+        });
     }
 
     async function extractProjectInfo() {
@@ -2617,7 +2706,25 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
     // ============================================================
     // RENDERING
     // ============================================================
+
+    // Debounced render to prevent rapid DOM thrashing
+    let renderTimeout = null;
+    let renderScheduled = false;
+
     function render() {
+        // Debounce rapid render calls
+        if (renderScheduled) return;
+        renderScheduled = true;
+
+        if (renderTimeout) clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            renderScheduled = false;
+            renderImmediate();
+        }, CONFIG.RENDER_DEBOUNCE_MS);
+    }
+
+    // Direct render without debouncing (for initial load)
+    function renderImmediate() {
         const main = document.getElementById('mainContent');
         switch (state.currentStep) {
             case 'upload': renderUploadStep(main); break;
@@ -3177,27 +3284,52 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
 
         state.isAutoAnalyzing = true;
         state.autoAnalyzeProgress = 0;
-        showLoading('Auto-Analyzing All Criteria', `Analyzing criterion 1 of ${CRITERIA.length}...`, true);
+        showLoading('Auto-Analyzing All Criteria', `Preparing batch analysis...`, true);
 
         try {
-            for (let i = 0; i < CRITERIA.length; i++) {
-                const criterion = CRITERIA[i];
-                state.autoAnalyzeProgress = Math.round(((i) / CRITERIA.length) * 100);
-                updateLoadingProgress(state.autoAnalyzeProgress, `Analyzing ${criterion.id.toUpperCase()}: ${criterion.question.substring(0, 40)}...`);
+            // Filter criteria that need analysis (don't have suggestions yet)
+            const criteriaToAnalyze = CRITERIA.filter(c => !state.aiSuggestions[c.id]);
+            const totalToAnalyze = criteriaToAnalyze.length;
+            let completed = 0;
 
-                // Only call AI if we don't already have a suggestion
-                if (!state.aiSuggestions[criterion.id]) {
-                    const suggestion = await getAISuggestion(criterion);
-                    if (suggestion) {
+            // Process in parallel batches for speed (respects rate limits)
+            const batchSize = CONFIG.API_PARALLEL_BATCH_SIZE;
+
+            for (let i = 0; i < criteriaToAnalyze.length; i += batchSize) {
+                const batch = criteriaToAnalyze.slice(i, i + batchSize);
+                const batchIds = batch.map(c => c.id.toUpperCase()).join(', ');
+
+                updateLoadingProgress(
+                    Math.round((completed / totalToAnalyze) * 100),
+                    `Analyzing batch: ${batchIds}...`
+                );
+
+                // Process batch in parallel
+                const results = await Promise.allSettled(
+                    batch.map(criterion => getAISuggestion(criterion))
+                );
+
+                // Process results
+                results.forEach((result, idx) => {
+                    const criterion = batch[idx];
+                    if (result.status === 'fulfilled' && result.value) {
+                        const suggestion = result.value;
                         state.aiSuggestions[criterion.id] = suggestion;
-                        // Auto-fill with AI recommendation
                         state.scores[criterion.id] = suggestion.suggestedScore;
                         let comment = suggestion.reasoning;
                         if (suggestion.relevantExcerpts?.length) {
                             comment += '\n\nEvidence: ' + suggestion.relevantExcerpts.map(e => '"' + e + '"').join('; ');
                         }
                         state.comments[criterion.id] = comment;
+                    } else if (result.status === 'rejected') {
+                        console.warn(`[Auto-Analyze] Failed for ${criterion.id}:`, result.reason);
                     }
+                    completed++;
+                });
+
+                // Small delay between batches to avoid rate limiting
+                if (i + batchSize < criteriaToAnalyze.length) {
+                    await new Promise(r => setTimeout(r, 200));
                 }
             }
 
@@ -3212,7 +3344,12 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
             state.currentStep = 'globalReview';
             debouncedAutoSave();
             render();
-            showToast('success', 'Auto-Analysis Complete', `All ${CRITERIA.length} criteria have been analyzed. Review and adjust scores below.`);
+
+            const cachedCount = CRITERIA.length - totalToAnalyze;
+            const msg = cachedCount > 0
+                ? `Analyzed ${totalToAnalyze} criteria (${cachedCount} from cache). Review and adjust below.`
+                : `All ${CRITERIA.length} criteria analyzed. Review and adjust below.`;
+            showToast('success', 'Auto-Analysis Complete', msg);
         } catch (error) {
             hideLoading();
             state.isAutoAnalyzing = false;
