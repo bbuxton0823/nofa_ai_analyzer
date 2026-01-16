@@ -233,19 +233,35 @@
 
                 <!-- Vision Analysis Section -->
                 <div class="mt-6 pt-4 border-t border-slate-200">
+                    <p class="text-sm font-medium text-slate-700 mb-3">Vision Analysis (Charts & Graphs)</p>
+
+                    <!-- Auto-detect toggle -->
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-sm text-slate-600">Auto-detect visual content</p>
+                            <p class="text-xs text-slate-400">Automatically enable vision when charts/graphs detected</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="visionAutoDetectToggle" class="sr-only peer" onchange="toggleVisionAutoDetect()">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                    </div>
+
+                    <!-- Manual toggle -->
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-slate-700">Vision Analysis (Charts & Graphs)</p>
-                            <p class="text-xs text-slate-500">AI analyzes images, charts, tables, and visual elements</p>
+                            <p class="text-sm text-slate-600">Always use vision analysis</p>
+                            <p class="text-xs text-slate-400">Force vision on for all documents</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="visionToggle" class="sr-only peer" onchange="toggleVisionAnalysis()">
                             <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
-                    <div class="mt-2 p-2 bg-blue-50 rounded-lg">
-                        <p class="text-xs text-blue-700"><strong>When enabled:</strong> AI can see and analyze charts, graphs, org charts, financial tables, and other visual elements in your PDF. Increases API cost but provides more complete analysis.</p>
-                        <p class="text-xs text-blue-600 mt-1" id="visionStatusText">Status: Disabled</p>
+
+                    <div class="mt-3 p-2 bg-blue-50 rounded-lg">
+                        <p class="text-xs text-blue-700"><strong>How it works:</strong> The system scans PDFs for pages with charts, graphs, tables, or low-text content. When detected, vision analysis automatically activates to analyze visual elements.</p>
+                        <p class="text-xs mt-1" id="visionStatusText">Status: Auto-detect enabled</p>
                     </div>
                 </div>
 
@@ -515,9 +531,13 @@
         TEMPLATE_PROFILES_KEY: 'nofa_template_profiles',  // Storage key for custom templates
         // Vision analysis settings
         VISION_ENABLED_KEY: 'nofa_vision_enabled',
+        VISION_AUTO_DETECT_KEY: 'nofa_vision_auto_detect',
         VISION_MAX_PAGES: 10,  // Max pages to send as images (to control costs)
         VISION_IMAGE_SCALE: 1.5,  // Scale factor for rendering (1.5 = good quality, reasonable size)
-        VISION_IMAGE_QUALITY: 0.8  // JPEG quality (0.8 = good balance of quality/size)
+        VISION_IMAGE_QUALITY: 0.8,  // JPEG quality (0.8 = good balance of quality/size)
+        // Auto-detection thresholds
+        VISION_MIN_CHARS_PER_PAGE: 200,  // Pages with fewer chars likely have charts/images
+        VISION_CHART_KEYWORDS: ['chart', 'graph', 'figure', 'table', 'diagram', 'org chart', 'organizational chart', 'pie chart', 'bar graph', 'timeline', 'flowchart', 'infographic']
     };
 
     // ============================================================
@@ -1150,6 +1170,9 @@
         },
         // Vision analysis
         visionEnabled: localStorage.getItem('nofa_vision_enabled') === 'true',
+        visionAutoDetect: localStorage.getItem('nofa_vision_auto_detect') !== 'false',  // Default to true
+        visionAutoEnabled: false,  // Track if vision was auto-enabled for this document
+        visualContentDetected: false,  // Whether visual content was detected in current PDF
         pdfPageImages: [],  // Base64 images of PDF pages for vision analysis
         visionAnalysisCache: {}  // Cache vision analysis results per page
     };
@@ -1398,12 +1421,19 @@
             displayEl.textContent = profile.name + (profile.isDefault ? ' (Default)' : '');
         }
 
-        // Set vision toggle state
+        // Set vision toggle states
+        const visionAutoDetectToggle = document.getElementById('visionAutoDetectToggle');
+        if (visionAutoDetectToggle) {
+            visionAutoDetectToggle.checked = state.visionAutoDetect;
+        }
+
         const visionToggle = document.getElementById('visionToggle');
         if (visionToggle) {
-            visionToggle.checked = state.visionEnabled;
-            updateVisionStatusText();
+            // Show manual toggle as checked only if explicitly enabled (not auto-enabled)
+            visionToggle.checked = state.visionEnabled && !state.visionAutoEnabled;
         }
+
+        updateVisionStatusText();
 
         document.getElementById('settingsModal').classList.remove('hidden');
     }
@@ -1415,11 +1445,20 @@
     // ============================================================
     // VISION ANALYSIS TOGGLE
     // ============================================================
+    function toggleVisionAutoDetect() {
+        state.visionAutoDetect = document.getElementById('visionAutoDetectToggle').checked;
+        localStorage.setItem(CONFIG.VISION_AUTO_DETECT_KEY, state.visionAutoDetect);
+        updateVisionStatusText();
+        console.log(`[Vision] Auto-detect ${state.visionAutoDetect ? 'enabled' : 'disabled'}`);
+    }
+
     function toggleVisionAnalysis() {
-        state.visionEnabled = document.getElementById('visionToggle').checked;
+        const manualEnabled = document.getElementById('visionToggle').checked;
+        state.visionEnabled = manualEnabled;
+        state.visionAutoEnabled = false;  // Manual toggle overrides auto
         localStorage.setItem(CONFIG.VISION_ENABLED_KEY, state.visionEnabled);
         updateVisionStatusText();
-        console.log(`[Vision] Vision analysis ${state.visionEnabled ? 'enabled' : 'disabled'}`);
+        console.log(`[Vision] Vision analysis manually ${state.visionEnabled ? 'enabled' : 'disabled'}`);
 
         // If enabling and we have a PDF loaded, render pages for vision
         if (state.visionEnabled && state.pdfDocument && state.pdfPageImages.length === 0) {
@@ -1434,21 +1473,41 @@
         const statusEl = document.getElementById('visionStatusText');
         if (!statusEl) return;
 
-        if (state.visionEnabled) {
+        let statusText = '';
+        let statusClass = 'text-xs mt-1 ';
+
+        if (state.visionAutoEnabled) {
+            // Vision was auto-enabled for this document
+            statusText = `Status: Auto-enabled for this document (${state.pdfPageImages.length} pages)`;
+            statusClass += 'text-green-600 font-medium';
+        } else if (state.visionEnabled) {
+            // Vision is manually enabled
             if (state.pdfPageImages.length > 0) {
-                statusEl.textContent = `Status: Enabled (${state.pdfPageImages.length} pages ready for visual analysis)`;
-                statusEl.className = 'text-xs text-green-600 mt-1';
+                statusText = `Status: Always on (${state.pdfPageImages.length} pages ready)`;
+                statusClass += 'text-blue-600';
             } else if (state.pdfDocument) {
-                statusEl.textContent = 'Status: Enabled (preparing pages...)';
-                statusEl.className = 'text-xs text-amber-600 mt-1';
+                statusText = 'Status: Always on (preparing pages...)';
+                statusClass += 'text-amber-600';
             } else {
-                statusEl.textContent = 'Status: Enabled (load a PDF to begin)';
-                statusEl.className = 'text-xs text-blue-600 mt-1';
+                statusText = 'Status: Always on (load a PDF to begin)';
+                statusClass += 'text-blue-600';
+            }
+        } else if (state.visionAutoDetect) {
+            // Auto-detect is on but no visual content detected yet
+            if (state.visualContentDetected === false && state.pdfDocument) {
+                statusText = 'Status: No visual content detected in current PDF';
+                statusClass += 'text-slate-500';
+            } else {
+                statusText = 'Status: Auto-detect enabled (will scan PDFs for charts/graphs)';
+                statusClass += 'text-slate-600';
             }
         } else {
-            statusEl.textContent = 'Status: Disabled (text-only analysis)';
-            statusEl.className = 'text-xs text-slate-500 mt-1';
+            statusText = 'Status: Disabled (text-only analysis)';
+            statusClass += 'text-slate-500';
         }
+
+        statusEl.textContent = statusText;
+        statusEl.className = statusClass;
     }
 
     // ============================================================
@@ -1516,14 +1575,20 @@
         // Vision analysis status
         const visionStatusEl = document.getElementById('diagVisionStatus');
         if (visionStatusEl) {
-            if (state.visionEnabled) {
+            if (state.visionAutoEnabled) {
+                visionStatusEl.textContent = `Auto-enabled (${state.pdfPageImages.length} pages)`;
+                visionStatusEl.className = 'text-green-600 font-medium';
+            } else if (state.visionEnabled) {
                 if (state.pdfPageImages.length > 0) {
-                    visionStatusEl.textContent = `Enabled (${state.pdfPageImages.length} pages)`;
-                    visionStatusEl.className = 'text-green-600 font-medium';
+                    visionStatusEl.textContent = `Always on (${state.pdfPageImages.length} pages)`;
+                    visionStatusEl.className = 'text-blue-600 font-medium';
                 } else {
-                    visionStatusEl.textContent = 'Enabled (no pages rendered)';
+                    visionStatusEl.textContent = 'Always on (no pages rendered)';
                     visionStatusEl.className = 'text-amber-600 font-medium';
                 }
+            } else if (state.visionAutoDetect) {
+                visionStatusEl.textContent = 'Auto-detect (no visuals found)';
+                visionStatusEl.className = 'text-slate-500';
             } else {
                 visionStatusEl.textContent = 'Disabled';
                 visionStatusEl.className = 'text-slate-500';
@@ -1536,9 +1601,14 @@
         const totalToAI = diag.mainContentChars + diag.attachmentChars;
         const coverage = diag.totalCharacters > 0 ? ((totalToAI / diag.totalCharacters) * 100).toFixed(1) : 0;
 
-        const visionStatus = state.visionEnabled
-            ? `Enabled (${state.pdfPageImages.length} pages rendered)`
-            : 'Disabled';
+        let visionStatus = 'Disabled';
+        if (state.visionAutoEnabled) {
+            visionStatus = `Auto-enabled (${state.pdfPageImages.length} pages rendered)`;
+        } else if (state.visionEnabled) {
+            visionStatus = `Always on (${state.pdfPageImages.length} pages rendered)`;
+        } else if (state.visionAutoDetect) {
+            visionStatus = 'Auto-detect enabled (no visuals detected)';
+        }
 
         const text = `NOFA AI Evaluator - Document Diagnostics
 ==========================================
@@ -2166,20 +2236,105 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
 
             console.log(`[Diagnostics] Pages: ${pdf.numPages}, Total chars: ${fullText.length}, Attachments start: Page ${state.diagnostics.attachmentStartPage || 'N/A'}`);
 
-            // If vision is enabled, render pages to images
+            // Auto-detect visual content if auto-detection is enabled
+            state.visionAutoEnabled = false;
+            state.visualContentDetected = false;
+
+            if (state.visionAutoDetect && !state.visionEnabled) {
+                const visualDetection = detectVisualContent(state.pdfPages, pdf);
+                state.visualContentDetected = visualDetection.hasVisualContent;
+
+                if (visualDetection.hasVisualContent) {
+                    console.log(`[Vision Auto-Detect] Visual content detected: ${visualDetection.reasons.join(', ')}`);
+                    state.visionEnabled = true;
+                    state.visionAutoEnabled = true;
+                    // Don't save to localStorage - this is just for this session
+                }
+            }
+
+            // If vision is enabled (manually or auto), render pages to images
             if (state.visionEnabled) {
                 updateLoadingProgress(100, 'Rendering pages for vision analysis...');
                 await renderPdfPagesForVision(pdf);
             }
 
             hideLoading();
-            showToast('success', 'PDF Loaded', `Successfully extracted ${pdf.numPages} pages.${state.visionEnabled ? ' Vision analysis enabled.' : ''}`);
+
+            // Build toast message
+            let toastMessage = `Successfully extracted ${pdf.numPages} pages.`;
+            if (state.visionAutoEnabled) {
+                toastMessage += ' Visual content detected - Vision analysis auto-enabled.';
+            } else if (state.visionEnabled) {
+                toastMessage += ' Vision analysis enabled.';
+            }
+            showToast('success', 'PDF Loaded', toastMessage);
             if (state.apiKey) await extractProjectInfo();
             render();
         } catch (error) {
             hideLoading();
             showError('PDF Processing Failed', 'Could not extract text from the PDF. The file may be corrupted or password-protected.', () => handlePDFUpload(file));
         }
+    }
+
+    // Detect visual content in PDF (charts, graphs, images)
+    function detectVisualContent(pdfPages, pdf) {
+        const reasons = [];
+        let hasVisualContent = false;
+
+        // Check 1: Look for pages with very little text (likely image/chart pages)
+        let lowTextPages = 0;
+        const pagesWithLowText = [];
+        pdfPages.forEach((pageText, index) => {
+            const charCount = pageText.trim().length;
+            if (charCount < CONFIG.VISION_MIN_CHARS_PER_PAGE && charCount > 0) {
+                lowTextPages++;
+                pagesWithLowText.push(index + 1);
+            }
+        });
+
+        if (lowTextPages >= 2) {
+            hasVisualContent = true;
+            reasons.push(`${lowTextPages} pages with minimal text (likely charts/images)`);
+        }
+
+        // Check 2: Look for chart/graph keywords in the text
+        const fullText = pdfPages.join(' ').toLowerCase();
+        const foundKeywords = CONFIG.VISION_CHART_KEYWORDS.filter(keyword =>
+            fullText.includes(keyword.toLowerCase())
+        );
+
+        if (foundKeywords.length >= 2) {
+            hasVisualContent = true;
+            reasons.push(`Keywords found: ${foundKeywords.slice(0, 3).join(', ')}`);
+        }
+
+        // Check 3: Look for references to figures, exhibits, or attachments with visual content
+        const figurePattern = /figure\s*\d+|exhibit\s*[a-z0-9]+|chart\s*\d+|graph\s*\d+|appendix\s*[a-z]/gi;
+        const figureMatches = fullText.match(figurePattern);
+
+        if (figureMatches && figureMatches.length >= 2) {
+            hasVisualContent = true;
+            reasons.push(`${figureMatches.length} figure/exhibit references`);
+        }
+
+        // Check 4: Pages in attachment section with low text (attachments often contain charts)
+        if (state.diagnostics.attachmentStartPage) {
+            const attachmentPages = pdfPages.slice(state.diagnostics.attachmentStartPage - 1);
+            const lowTextAttachPages = attachmentPages.filter(p => p.trim().length < CONFIG.VISION_MIN_CHARS_PER_PAGE).length;
+            if (lowTextAttachPages >= 1) {
+                hasVisualContent = true;
+                reasons.push(`${lowTextAttachPages} attachment pages likely contain visuals`);
+            }
+        }
+
+        console.log(`[Vision Auto-Detect] Analysis complete. Visual content: ${hasVisualContent}. Reasons: ${reasons.length > 0 ? reasons.join('; ') : 'None'}`);
+
+        return {
+            hasVisualContent,
+            reasons,
+            lowTextPages: pagesWithLowText,
+            keywords: foundKeywords
+        };
     }
 
     // Render PDF pages to images for vision analysis

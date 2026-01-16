@@ -91,6 +91,7 @@ Distribute the modified file to your team.
 
 | Version | Changes |
 |---------|---------|
+| v7.2 | Added automatic vision detection - system now scans PDFs for charts/graphs and auto-enables vision analysis when visual content is detected |
 | v7.1 | Added Vision Analysis capability for charts, graphs, tables, and visual elements; Updated diagnostics panel to show vision status |
 | v7 | Fixed duplicate file upload bug; Fixed "Back to Evidence" navigation; Added page number input for direct navigation; Improved AI analysis to include attachments/exhibits content; Added admin diagnostics panel |
 | v6 | Initial public release with full AI-assisted scoring workflow |
