@@ -2120,19 +2120,37 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
 
     // Render PDF page as visual image (shows graphics, charts, etc.)
     async function renderVisualPdfPage(pageIndex) {
-        if (!state.pdfDocument) {
-            console.warn('[PDF Visual] No PDF document loaded');
-            return;
-        }
-
         const canvas = document.getElementById('pdfCanvas');
         const ctx = canvas.getContext('2d');
 
+        // Check if PDF document is available
+        if (!state.pdfDocument) {
+            console.warn('[PDF Visual] No PDF document loaded, attempting to reload from file');
+
+            // Try to reload the PDF from the stored file
+            if (state.applicationPDF) {
+                try {
+                    const arrayBuffer = await state.applicationPDF.arrayBuffer();
+                    state.pdfDocument = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    console.log('[PDF Visual] Reloaded PDF document');
+                } catch (reloadError) {
+                    console.error('[PDF Visual] Failed to reload PDF:', reloadError);
+                    showPdfLoadError(canvas, ctx, 'PDF not available. Please reload the document.');
+                    return;
+                }
+            } else {
+                showPdfLoadError(canvas, ctx, 'No PDF loaded. Please upload a document.');
+                return;
+            }
+        }
+
         try {
             const pageNum = Math.max(1, Math.min(pageIndex + 1, state.pdfDocument.numPages));
+            console.log(`[PDF Visual] Rendering page ${pageNum} of ${state.pdfDocument.numPages}`);
+
             const page = await state.pdfDocument.getPage(pageNum);
 
-            // Calculate scale based on zoom level and container width
+            // Calculate scale based on zoom level
             const baseScale = 1.5; // Base rendering quality
             const scale = baseScale * pdfZoomScale;
             const viewport = page.getViewport({ scale });
@@ -2141,23 +2159,39 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
             canvas.width = viewport.width;
             canvas.height = viewport.height;
 
-            // Clear and render
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            await page.render({
-                canvasContext: ctx,
-                viewport: viewport
-            }).promise;
+            // Ensure canvas is visible
+            canvas.style.display = 'block';
 
-            console.log(`[PDF Visual] Rendered page ${pageNum} at ${Math.round(pdfZoomScale * 100)}% zoom`);
+            // Clear canvas with white background first
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Render the PDF page
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport,
+                background: 'white'
+            };
+
+            await page.render(renderContext).promise;
+
+            console.log(`[PDF Visual] Successfully rendered page ${pageNum} (${canvas.width}x${canvas.height}) at ${Math.round(pdfZoomScale * 100)}% zoom`);
         } catch (error) {
             console.error('[PDF Visual] Render error:', error);
-            ctx.fillStyle = '#f1f5f9';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#64748b';
-            ctx.font = '16px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('Unable to render page', canvas.width / 2, canvas.height / 2);
+            showPdfLoadError(canvas, ctx, 'Unable to render page: ' + error.message);
         }
+    }
+
+    // Helper to show error message on canvas
+    function showPdfLoadError(canvas, ctx, message) {
+        canvas.width = 600;
+        canvas.height = 400;
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#64748b';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(message, canvas.width / 2, canvas.height / 2);
     }
 
     // Render PDF page as text with highlighting (original functionality)
