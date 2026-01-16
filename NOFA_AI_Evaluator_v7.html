@@ -397,7 +397,7 @@
 
     <!-- PDF Viewer Modal -->
     <div id="pdfViewerModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="pdfViewerTitle">
-        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] shadow-2xl flex flex-col">
+        <div class="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] shadow-2xl flex flex-col">
             <div class="p-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <button id="backToEvidenceBtn" onclick="backToEvidenceModal()" class="hidden px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm font-medium flex items-center gap-1">
@@ -409,14 +409,38 @@
                         <p id="pdfViewerContext" class="text-sm text-slate-500">Reviewing relevant section</p>
                     </div>
                 </div>
-                <button onclick="hidePdfViewer()" class="text-slate-400 hover:text-slate-600 p-2" aria-label="Close PDF viewer">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
+                <div class="flex items-center gap-3">
+                    <!-- View Mode Toggle -->
+                    <div class="flex items-center bg-slate-100 rounded-lg p-1">
+                        <button id="visualViewBtn" onclick="setPdfViewMode('visual')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-white text-blue-600 shadow-sm">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Visual
+                        </button>
+                        <button id="textViewBtn" onclick="setPdfViewMode('text')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors text-slate-600 hover:text-slate-800">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Text
+                        </button>
+                    </div>
+                    <!-- Zoom Controls (visual mode only) -->
+                    <div id="zoomControls" class="flex items-center gap-1">
+                        <button onclick="zoomPdf(-0.25)" class="px-2 py-1 border border-slate-300 rounded hover:bg-slate-100 text-sm" title="Zoom out">−</button>
+                        <span id="zoomLevel" class="text-xs text-slate-600 w-12 text-center">100%</span>
+                        <button onclick="zoomPdf(0.25)" class="px-2 py-1 border border-slate-300 rounded hover:bg-slate-100 text-sm" title="Zoom in">+</button>
+                    </div>
+                    <button onclick="hidePdfViewer()" class="text-slate-400 hover:text-slate-600 p-2" aria-label="Close PDF viewer">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
-            <div id="pdfViewerContent" class="pdf-viewer p-6 flex-1 overflow-y-auto" role="document">
-                <!-- PDF content will be rendered here -->
+            <!-- Visual PDF View (canvas rendering) -->
+            <div id="pdfVisualView" class="flex-1 overflow-auto bg-slate-200 flex items-start justify-center p-4" style="min-height: 500px;">
+                <canvas id="pdfCanvas" class="shadow-lg bg-white"></canvas>
+            </div>
+            <!-- Text View (original) -->
+            <div id="pdfTextView" class="pdf-viewer p-6 flex-1 overflow-y-auto hidden" role="document">
+                <!-- PDF text content will be rendered here -->
             </div>
             <div class="p-4 border-t border-slate-200 bg-slate-50 flex-shrink-0">
                 <div class="flex items-center justify-between">
@@ -1947,6 +1971,8 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
     // ============================================================
     let currentEvidenceCriterion = null; // Track which criterion's evidence we're viewing
     let currentSearchTerms = []; // Store current search terms for highlighting
+    let pdfViewMode = 'visual'; // 'visual' or 'text'
+    let pdfZoomScale = 1.0; // Current zoom level for visual mode
 
     function showPdfViewer(context, searchTerms = [], fromEvidenceModal = false, criterionId = null) {
         document.getElementById('pdfViewerContext').textContent = context;
@@ -1967,7 +1993,125 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
             backBtn.classList.remove('flex');
         }
 
+        // Set initial view mode and render
+        setPdfViewMode(pdfViewMode);
         renderPdfPage(state.pdfViewerCurrentPage, searchTerms);
+    }
+
+    // Switch between visual and text view modes
+    function setPdfViewMode(mode) {
+        pdfViewMode = mode;
+        const visualView = document.getElementById('pdfVisualView');
+        const textView = document.getElementById('pdfTextView');
+        const visualBtn = document.getElementById('visualViewBtn');
+        const textBtn = document.getElementById('textViewBtn');
+        const zoomControls = document.getElementById('zoomControls');
+
+        if (mode === 'visual') {
+            visualView.classList.remove('hidden');
+            textView.classList.add('hidden');
+            visualBtn.className = 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-white text-blue-600 shadow-sm';
+            textBtn.className = 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors text-slate-600 hover:text-slate-800';
+            zoomControls.classList.remove('hidden');
+            // Render visual PDF page
+            renderVisualPdfPage(state.pdfViewerCurrentPage);
+        } else {
+            visualView.classList.add('hidden');
+            textView.classList.remove('hidden');
+            textBtn.className = 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-white text-blue-600 shadow-sm';
+            visualBtn.className = 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors text-slate-600 hover:text-slate-800';
+            zoomControls.classList.add('hidden');
+            // Render text view
+            renderTextPdfPage(state.pdfViewerCurrentPage, currentSearchTerms);
+        }
+    }
+
+    // Zoom controls for visual PDF view
+    function zoomPdf(delta) {
+        pdfZoomScale = Math.max(0.5, Math.min(3.0, pdfZoomScale + delta));
+        document.getElementById('zoomLevel').textContent = Math.round(pdfZoomScale * 100) + '%';
+        renderVisualPdfPage(state.pdfViewerCurrentPage);
+    }
+
+    // Render PDF page as visual image (shows graphics, charts, etc.)
+    async function renderVisualPdfPage(pageIndex) {
+        if (!state.pdfDocument) {
+            console.warn('[PDF Visual] No PDF document loaded');
+            return;
+        }
+
+        const canvas = document.getElementById('pdfCanvas');
+        const ctx = canvas.getContext('2d');
+
+        try {
+            const pageNum = Math.max(1, Math.min(pageIndex + 1, state.pdfDocument.numPages));
+            const page = await state.pdfDocument.getPage(pageNum);
+
+            // Calculate scale based on zoom level and container width
+            const baseScale = 1.5; // Base rendering quality
+            const scale = baseScale * pdfZoomScale;
+            const viewport = page.getViewport({ scale });
+
+            // Set canvas dimensions
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            // Clear and render
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            await page.render({
+                canvasContext: ctx,
+                viewport: viewport
+            }).promise;
+
+            console.log(`[PDF Visual] Rendered page ${pageNum} at ${Math.round(pdfZoomScale * 100)}% zoom`);
+        } catch (error) {
+            console.error('[PDF Visual] Render error:', error);
+            ctx.fillStyle = '#f1f5f9';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#64748b';
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Unable to render page', canvas.width / 2, canvas.height / 2);
+        }
+    }
+
+    // Render PDF page as text with highlighting (original functionality)
+    function renderTextPdfPage(pageIndex, searchTerms = null) {
+        if (!state.pdfPages.length) return;
+        const termsToUse = searchTerms !== null ? searchTerms : currentSearchTerms;
+        const pageText = state.pdfPages[pageIndex] || '';
+        let displayText = pageText;
+
+        // Build search phrases and apply highlighting (same as before)
+        const searchPhrases = [];
+        termsToUse.forEach(term => {
+            if (term && term.length > 3) {
+                const normalizedTerm = term.replace(/\s+/g, ' ').trim();
+                if (normalizedTerm.length <= 100) searchPhrases.push(normalizedTerm);
+                const phrases = normalizedTerm.split(/[.!?]/).filter(p => p.trim().length > 15);
+                phrases.forEach(p => {
+                    const cleaned = p.trim();
+                    if (cleaned.length > 15 && cleaned.length <= 80) searchPhrases.push(cleaned);
+                    if (cleaned.length > 40) searchPhrases.push(cleaned.substring(0, 40));
+                });
+                if (normalizedTerm.length > 50) searchPhrases.push(normalizedTerm.substring(0, 50));
+                if (normalizedTerm.length > 30) searchPhrases.push(normalizedTerm.substring(0, 30));
+            }
+        });
+
+        const uniquePhrases = [...new Set(searchPhrases)].sort((a, b) => b.length - a.length);
+        uniquePhrases.forEach(phrase => {
+            if (phrase && phrase.length > 10) {
+                const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const flexiblePattern = escaped.replace(/ /g, '\\s+');
+                try {
+                    const regex = new RegExp(`(${flexiblePattern})`, 'gi');
+                    displayText = displayText.replace(regex, '<span class="highlight-text">$1</span>');
+                } catch (e) { /* skip invalid regex */ }
+            }
+        });
+
+        document.getElementById('pdfTextView').innerHTML = `<div class="prose max-w-none"><div class="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">${displayText}</div></div>`;
     }
 
     function hidePdfViewer() {
@@ -1986,79 +2130,33 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
         }
     }
 
+    // Main render function that handles both visual and text modes
     function renderPdfPage(pageIndex, searchTerms = null) {
         if (!state.pdfPages.length) return;
-        // Use passed searchTerms or fall back to stored ones
-        const termsToUse = searchTerms !== null ? searchTerms : currentSearchTerms;
+
+        // Store search terms
+        if (searchTerms !== null) {
+            currentSearchTerms = searchTerms;
+        }
+
+        // Update current page index
         state.pdfViewerCurrentPage = Math.max(0, Math.min(pageIndex, state.pdfPages.length - 1));
-        const pageText = state.pdfPages[state.pdfViewerCurrentPage];
-        let displayText = pageText;
 
-        // Build a list of search phrases from the excerpts
-        const searchPhrases = [];
-        termsToUse.forEach(term => {
-            if (term && term.length > 3) {
-                // Normalize whitespace in the term
-                const normalizedTerm = term.replace(/\s+/g, ' ').trim();
-
-                // Try the full term first (if not too long)
-                if (normalizedTerm.length <= 100) {
-                    searchPhrases.push(normalizedTerm);
-                }
-
-                // Also add shorter key phrases for better matching
-                // Split by sentence-ending punctuation and add significant phrases
-                const phrases = normalizedTerm.split(/[.!?]/).filter(p => p.trim().length > 15);
-                phrases.forEach(p => {
-                    const cleaned = p.trim();
-                    if (cleaned.length > 15 && cleaned.length <= 80) {
-                        searchPhrases.push(cleaned);
-                    }
-                    // Also try first 40 chars of each phrase
-                    if (cleaned.length > 40) {
-                        searchPhrases.push(cleaned.substring(0, 40));
-                    }
-                });
-
-                // Add first 50 chars as a fallback
-                if (normalizedTerm.length > 50) {
-                    searchPhrases.push(normalizedTerm.substring(0, 50));
-                }
-                // Add first 30 chars as another fallback
-                if (normalizedTerm.length > 30) {
-                    searchPhrases.push(normalizedTerm.substring(0, 30));
-                }
-            }
-        });
-
-        // Remove duplicates and sort by length (longer first for better highlighting)
-        const uniquePhrases = [...new Set(searchPhrases)].sort((a, b) => b.length - a.length);
-
-        // Apply highlighting for each phrase
-        uniquePhrases.forEach(phrase => {
-            if (phrase && phrase.length > 10) {
-                // Escape special regex characters
-                const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                // Allow flexible whitespace matching
-                const flexiblePattern = escaped.replace(/ /g, '\\s+');
-                try {
-                    const regex = new RegExp(`(${flexiblePattern})`, 'gi');
-                    displayText = displayText.replace(regex, '<span class="highlight-text">$1</span>');
-                } catch (e) {
-                    // If regex fails, skip this phrase
-                }
-            }
-        });
-
-        document.getElementById('pdfViewerContent').innerHTML = `<div class="prose max-w-none"><div class="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">${displayText}</div></div>`;
         // Update page input and total
         document.getElementById('pdfPageInput').value = state.pdfViewerCurrentPage + 1;
         document.getElementById('pdfPageInput').max = state.pdfPages.length;
         document.getElementById('pdfTotalPages').textContent = state.pdfPages.length;
+
+        // Render based on current view mode
+        if (pdfViewMode === 'visual') {
+            renderVisualPdfPage(state.pdfViewerCurrentPage);
+        } else {
+            renderTextPdfPage(state.pdfViewerCurrentPage, currentSearchTerms);
+        }
     }
 
-    function pdfViewerPrevPage() { renderPdfPage(state.pdfViewerCurrentPage - 1, currentSearchTerms); }
-    function pdfViewerNextPage() { renderPdfPage(state.pdfViewerCurrentPage + 1, currentSearchTerms); }
+    function pdfViewerPrevPage() { renderPdfPage(state.pdfViewerCurrentPage - 1); }
+    function pdfViewerNextPage() { renderPdfPage(state.pdfViewerCurrentPage + 1); }
 
     function goToPage() {
         const input = document.getElementById('pdfPageInput');

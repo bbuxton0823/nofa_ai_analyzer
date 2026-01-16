@@ -91,6 +91,7 @@ Distribute the modified file to your team.
 
 | Version | Changes |
 |---------|---------|
+| v7.4 | Added visual PDF viewer with full graphics/charts display; Toggle between Visual and Text views; Zoom controls (50%-300%); All page navigation features work in both modes |
 | v7.3 | Performance optimizations: parallel PDF page extraction (5x faster), parallel API batch processing (3 concurrent calls), retry logic with exponential backoff, in-memory caching, debounced rendering |
 | v7.2 | Added automatic vision detection - system now scans PDFs for charts/graphs and auto-enables vision analysis when visual content is detected |
 | v7.1 | Added Vision Analysis capability for charts, graphs, tables, and visual elements; Updated diagnostics panel to show vision status |
