@@ -152,8 +152,8 @@
     </div>
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl">
-            <div class="p-6">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="p-6 overflow-y-auto flex-1">
                 <div class="flex items-center justify-between mb-6">
                     <h3 id="settingsTitle" class="text-xl font-bold text-slate-800">Settings</h3>
                     <button onclick="hideSettings()" class="text-slate-400 hover:text-slate-600" aria-label="Close settings">
@@ -297,7 +297,10 @@
                     </div>
                 </div>
 
-                <div class="flex gap-3 mt-6">
+            </div>
+            <!-- Fixed footer with buttons - always visible -->
+            <div class="p-4 border-t border-slate-200 bg-white rounded-b-2xl flex-shrink-0">
+                <div class="flex gap-3">
                     <button onclick="clearApiKey()" class="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors">
                         Clear Key
                     </button>
