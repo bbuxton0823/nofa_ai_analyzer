@@ -2154,9 +2154,13 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
             // Calculate scale based on zoom level
             const baseScale = 1.5; // Base rendering quality
             const scale = baseScale * pdfZoomScale;
-            const viewport = page.getViewport({ scale });
 
-            // Set canvas dimensions
+            // Get viewport with correct rotation (PDF pages can have rotation metadata)
+            // The page.rotate property contains the page's rotation in degrees
+            const rotation = page.rotate || 0;
+            const viewport = page.getViewport({ scale: scale, rotation: rotation });
+
+            // Set canvas dimensions based on viewport (accounts for rotation)
             canvas.width = viewport.width;
             canvas.height = viewport.height;
 
@@ -2167,7 +2171,7 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Render the PDF page
+            // Render the PDF page with proper transform
             const renderContext = {
                 canvasContext: ctx,
                 viewport: viewport,
@@ -4283,7 +4287,31 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
 
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2" for="fundingSource">Recommended Funding Source *</label>
+                            <div class="flex items-center gap-2 mb-2">
+                                <label class="block text-sm font-medium text-slate-700" for="fundingSource">Recommended Funding Source *</label>
+                                <div class="relative group">
+                                    <button type="button" class="text-slate-400 hover:text-blue-600 transition-colors" aria-label="Help - Where to find funding source">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </button>
+                                    <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-72">
+                                        <div class="bg-slate-800 text-white text-xs rounded-lg p-3 shadow-lg">
+                                            <p class="font-semibold mb-2">Where to find this information:</p>
+                                            <ul class="space-y-1 text-slate-200">
+                                                <li>• Check the <strong>Application Cover Page</strong> for funding request type</li>
+                                                <li>• Look in <strong>Section 4 (Budget)</strong> for requested funding amounts</li>
+                                                <li>• Review <strong>Attachment 1</strong> for project financing details</li>
+                                                <li>• The NOFA specifies eligible activities for each funding source</li>
+                                            </ul>
+                                            <p class="mt-2 text-slate-300 border-t border-slate-600 pt-2">
+                                                <strong>HOME:</strong> Housing development/rehab<br>
+                                                <strong>CDBG:</strong> Public services, facilities, infrastructure
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <select id="fundingSource" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" aria-required="true">
                                 <option value="">Select funding source...</option>
                                 <option value="HOME" ${state.recommendation.fundingSource === 'HOME' ? 'selected' : ''}>HOME</option>
