@@ -231,6 +231,24 @@
                     </div>
                 </div>
 
+                <!-- Vision Analysis Section -->
+                <div class="mt-6 pt-4 border-t border-slate-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Vision Analysis (Charts & Graphs)</p>
+                            <p class="text-xs text-slate-500">AI analyzes images, charts, tables, and visual elements</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="visionToggle" class="sr-only peer" onchange="toggleVisionAnalysis()">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                    <div class="mt-2 p-2 bg-blue-50 rounded-lg">
+                        <p class="text-xs text-blue-700"><strong>When enabled:</strong> AI can see and analyze charts, graphs, org charts, financial tables, and other visual elements in your PDF. Increases API cost but provides more complete analysis.</p>
+                        <p class="text-xs text-blue-600 mt-1" id="visionStatusText">Status: Disabled</p>
+                    </div>
+                </div>
+
                 <!-- Consistency Cache Section -->
                 <div class="mt-6 pt-4 border-t border-slate-200">
                     <div class="flex items-center justify-between">
@@ -289,6 +307,8 @@
                                 <div id="diagCriteriaCount" class="text-slate-800 font-semibold">-</div>
                                 <div class="text-slate-600">Last Analysis:</div>
                                 <div id="diagLastAnalysis" class="text-slate-800 font-semibold">-</div>
+                                <div class="text-slate-600">Vision Analysis:</div>
+                                <div id="diagVisionStatus" class="text-slate-500">Disabled</div>
                             </div>
                         </div>
                         <button onclick="copyDiagnosticsToClipboard()" class="w-full mt-2 px-2 py-1 text-xs bg-slate-200 hover:bg-slate-300 rounded transition-colors">
@@ -492,7 +512,12 @@
         RESPONSE_CACHE_KEY: 'nofa_ai_response_cache',  // Cache AI responses by input hash
         TEXT_CHUNK_SIZE: 40000,  // Increased chunk size to capture more content including attachments
         ATTACHMENT_CHUNK_SIZE: 30000,  // Additional space for attachment/exhibit content
-        TEMPLATE_PROFILES_KEY: 'nofa_template_profiles'  // Storage key for custom templates
+        TEMPLATE_PROFILES_KEY: 'nofa_template_profiles',  // Storage key for custom templates
+        // Vision analysis settings
+        VISION_ENABLED_KEY: 'nofa_vision_enabled',
+        VISION_MAX_PAGES: 10,  // Max pages to send as images (to control costs)
+        VISION_IMAGE_SCALE: 1.5,  // Scale factor for rendering (1.5 = good quality, reasonable size)
+        VISION_IMAGE_QUALITY: 0.8  // JPEG quality (0.8 = good balance of quality/size)
     };
 
     // ============================================================
@@ -1120,8 +1145,13 @@
             attachmentChars: 0,
             attachmentStartPage: null,
             lastAnalysisTimestamp: null,
-            criteriaAnalyzed: 0
-        }
+            criteriaAnalyzed: 0,
+            visionPagesAnalyzed: 0
+        },
+        // Vision analysis
+        visionEnabled: localStorage.getItem('nofa_vision_enabled') === 'true',
+        pdfPageImages: [],  // Base64 images of PDF pages for vision analysis
+        visionAnalysisCache: {}  // Cache vision analysis results per page
     };
 
     let autoSaveTimeout = null;
@@ -1368,11 +1398,57 @@
             displayEl.textContent = profile.name + (profile.isDefault ? ' (Default)' : '');
         }
 
+        // Set vision toggle state
+        const visionToggle = document.getElementById('visionToggle');
+        if (visionToggle) {
+            visionToggle.checked = state.visionEnabled;
+            updateVisionStatusText();
+        }
+
         document.getElementById('settingsModal').classList.remove('hidden');
     }
 
     function hideSettings() {
         document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    // ============================================================
+    // VISION ANALYSIS TOGGLE
+    // ============================================================
+    function toggleVisionAnalysis() {
+        state.visionEnabled = document.getElementById('visionToggle').checked;
+        localStorage.setItem(CONFIG.VISION_ENABLED_KEY, state.visionEnabled);
+        updateVisionStatusText();
+        console.log(`[Vision] Vision analysis ${state.visionEnabled ? 'enabled' : 'disabled'}`);
+
+        // If enabling and we have a PDF loaded, render pages for vision
+        if (state.visionEnabled && state.pdfDocument && state.pdfPageImages.length === 0) {
+            renderPdfPagesForVision(state.pdfDocument).then(() => {
+                console.log(`[Vision] Rendered ${state.pdfPageImages.length} pages for vision analysis`);
+                updateVisionStatusText();
+            });
+        }
+    }
+
+    function updateVisionStatusText() {
+        const statusEl = document.getElementById('visionStatusText');
+        if (!statusEl) return;
+
+        if (state.visionEnabled) {
+            if (state.pdfPageImages.length > 0) {
+                statusEl.textContent = `Status: Enabled (${state.pdfPageImages.length} pages ready for visual analysis)`;
+                statusEl.className = 'text-xs text-green-600 mt-1';
+            } else if (state.pdfDocument) {
+                statusEl.textContent = 'Status: Enabled (preparing pages...)';
+                statusEl.className = 'text-xs text-amber-600 mt-1';
+            } else {
+                statusEl.textContent = 'Status: Enabled (load a PDF to begin)';
+                statusEl.className = 'text-xs text-blue-600 mt-1';
+            }
+        } else {
+            statusEl.textContent = 'Status: Disabled (text-only analysis)';
+            statusEl.className = 'text-xs text-slate-500 mt-1';
+        }
     }
 
     // ============================================================
@@ -1436,12 +1512,33 @@
         } else {
             document.getElementById('diagLastAnalysis').textContent = 'Not yet analyzed';
         }
+
+        // Vision analysis status
+        const visionStatusEl = document.getElementById('diagVisionStatus');
+        if (visionStatusEl) {
+            if (state.visionEnabled) {
+                if (state.pdfPageImages.length > 0) {
+                    visionStatusEl.textContent = `Enabled (${state.pdfPageImages.length} pages)`;
+                    visionStatusEl.className = 'text-green-600 font-medium';
+                } else {
+                    visionStatusEl.textContent = 'Enabled (no pages rendered)';
+                    visionStatusEl.className = 'text-amber-600 font-medium';
+                }
+            } else {
+                visionStatusEl.textContent = 'Disabled';
+                visionStatusEl.className = 'text-slate-500';
+            }
+        }
     }
 
     function copyDiagnosticsToClipboard() {
         const diag = state.diagnostics;
         const totalToAI = diag.mainContentChars + diag.attachmentChars;
         const coverage = diag.totalCharacters > 0 ? ((totalToAI / diag.totalCharacters) * 100).toFixed(1) : 0;
+
+        const visionStatus = state.visionEnabled
+            ? `Enabled (${state.pdfPageImages.length} pages rendered)`
+            : 'Disabled';
 
         const text = `NOFA AI Evaluator - Document Diagnostics
 ==========================================
@@ -1455,6 +1552,7 @@ AI Analysis Coverage:
 - Attachments: ${diag.attachmentChars.toLocaleString()} chars
 - Total Sent to AI: ${totalToAI.toLocaleString()} chars
 - Coverage: ${coverage}%
+- Vision Analysis: ${visionStatus}
 
 Criteria Analyzed: ${diag.criteriaAnalyzed}
 Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestamp).toLocaleString() : 'N/A'}
@@ -2068,14 +2166,87 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
 
             console.log(`[Diagnostics] Pages: ${pdf.numPages}, Total chars: ${fullText.length}, Attachments start: Page ${state.diagnostics.attachmentStartPage || 'N/A'}`);
 
+            // If vision is enabled, render pages to images
+            if (state.visionEnabled) {
+                updateLoadingProgress(100, 'Rendering pages for vision analysis...');
+                await renderPdfPagesForVision(pdf);
+            }
+
             hideLoading();
-            showToast('success', 'PDF Loaded', `Successfully extracted ${pdf.numPages} pages.`);
+            showToast('success', 'PDF Loaded', `Successfully extracted ${pdf.numPages} pages.${state.visionEnabled ? ' Vision analysis enabled.' : ''}`);
             if (state.apiKey) await extractProjectInfo();
             render();
         } catch (error) {
             hideLoading();
             showError('PDF Processing Failed', 'Could not extract text from the PDF. The file may be corrupted or password-protected.', () => handlePDFUpload(file));
         }
+    }
+
+    // Render PDF pages to images for vision analysis
+    async function renderPdfPagesForVision(pdf) {
+        state.pdfPageImages = [];
+        const maxPages = Math.min(pdf.numPages, CONFIG.VISION_MAX_PAGES);
+
+        // Determine which pages to render - prioritize attachment pages if detected
+        let pagesToRender = [];
+        const attachStart = state.diagnostics.attachmentStartPage;
+
+        if (attachStart && attachStart <= pdf.numPages) {
+            // Include some main content pages and attachment pages
+            const mainContentPages = Math.min(3, attachStart - 1);
+            const attachmentPages = maxPages - mainContentPages;
+
+            // First few pages of main content
+            for (let i = 1; i <= mainContentPages; i++) {
+                pagesToRender.push(i);
+            }
+            // Attachment pages
+            for (let i = attachStart; i < attachStart + attachmentPages && i <= pdf.numPages; i++) {
+                pagesToRender.push(i);
+            }
+        } else {
+            // No attachments detected - render first N pages
+            for (let i = 1; i <= maxPages; i++) {
+                pagesToRender.push(i);
+            }
+        }
+
+        console.log(`[Vision] Rendering ${pagesToRender.length} pages for vision analysis: ${pagesToRender.join(', ')}`);
+
+        for (const pageNum of pagesToRender) {
+            try {
+                const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: CONFIG.VISION_IMAGE_SCALE });
+
+                // Create canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const ctx = canvas.getContext('2d');
+
+                // Render page to canvas
+                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+                // Convert to base64 JPEG
+                const imageData = canvas.toDataURL('image/jpeg', CONFIG.VISION_IMAGE_QUALITY);
+                // Remove the data URL prefix for API
+                const base64Data = imageData.replace(/^data:image\/jpeg;base64,/, '');
+
+                state.pdfPageImages.push({
+                    pageNum: pageNum,
+                    base64: base64Data,
+                    width: viewport.width,
+                    height: viewport.height
+                });
+
+                console.log(`[Vision] Rendered page ${pageNum}: ${Math.round(base64Data.length / 1024)}KB`);
+            } catch (err) {
+                console.warn(`[Vision] Failed to render page ${pageNum}:`, err);
+            }
+        }
+
+        state.diagnostics.visionPagesAnalyzed = state.pdfPageImages.length;
+        console.log(`[Vision] Total ${state.pdfPageImages.length} pages rendered for vision analysis`);
     }
 
     async function handleTemplateUpload(file) {
@@ -2159,6 +2330,56 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
         return data.content[0].text;
     }
 
+    // Call Claude with vision capability - sends images along with text
+    async function callClaudeWithVision(systemPrompt, userPrompt, images = []) {
+        if (!state.apiKey) throw new Error('API key not configured');
+
+        // Build message content with text and images
+        const messageContent = [];
+
+        // Add images first (Claude processes them in order)
+        for (const img of images) {
+            messageContent.push({
+                type: 'image',
+                source: {
+                    type: 'base64',
+                    media_type: 'image/jpeg',
+                    data: img.base64
+                }
+            });
+        }
+
+        // Add the text prompt
+        messageContent.push({
+            type: 'text',
+            text: userPrompt
+        });
+
+        const response = await fetch(CONFIG.API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': state.apiKey,
+                'anthropic-version': '2023-06-01',
+                'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+                model: CONFIG.MODEL,
+                max_tokens: CONFIG.MAX_TOKENS,
+                temperature: 0,
+                system: systemPrompt,
+                messages: [{ role: 'user', content: messageContent }]
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'API request failed');
+        }
+        const data = await response.json();
+        return data.content[0].text;
+    }
+
     async function extractProjectInfo() {
         showLoading('Analyzing Application', 'AI is extracting project information...');
         // CONSISTENCY: Use normalized text for project info extraction
@@ -2184,8 +2405,11 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
         // CONSISTENCY: Get comprehensive text including main content AND attachments/exhibits
         const normalizedText = getComprehensiveTextForAI(state.applicationText, CONFIG.TEXT_CHUNK_SIZE);
 
+        // Include vision flag in cache key so vision/non-vision results are cached separately
+        const visionFlag = state.visionEnabled && state.pdfPageImages.length > 0 ? '_vision' : '';
+
         // CONSISTENCY: Generate hash for caching
-        const inputForHash = `${criterion.id}_${normalizedText}_${JSON.stringify(state.projectInfo)}`;
+        const inputForHash = `${criterion.id}_${normalizedText}_${JSON.stringify(state.projectInfo)}${visionFlag}`;
         const inputHash = await hashText(inputForHash);
 
         // CONSISTENCY: Check cache first
@@ -2196,10 +2420,29 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
             return cachedResponse;
         }
 
-        const systemPrompt = `You are an expert NOFA reviewer for San Mateo County Department of Housing. You are evaluating criterion: "${criterion.question}"\n\nSCORING RULE:\n${criterion.scoringRule}\n\nPROJECT INFO:\n- Applicant: ${state.projectInfo.applicant || 'Unknown'}\n- Project: ${state.projectInfo.project || 'Unknown'}\n- Amount Requested: ${formatCurrency(state.projectInfo.amountRequested)}\n- Total Cost: ${formatCurrency(state.projectInfo.totalCost)}\n- Clients Served: ${formatNumber(state.projectInfo.clientsServed)}\n- Cost Per Client: ${costPerClient ? formatCurrency(costPerClient) : 'N/A'}\n- County % of Total: ${countyPercent ? countyPercent.toFixed(1) + '%' : 'N/A'}\n\nIMPORTANT: The application text includes BOTH the main narrative AND attachments/exhibits section. Look for evidence in attachments (financial statements, audits, organizational charts, letters of support, etc.) when evaluating criteria that reference them.\n\nProvide BOTH a recommendation AND a counter-argument.\n\nRespond with ONLY a JSON object:\n{\n    "suggestedScore": 2,\n    "reasoning": "Your detailed reasoning citing specific evidence from the application AND attachments",\n    "counterArgument": "A thoughtful argument for why a different score might be appropriate",\n    "counterScore": 1,\n    "relevantExcerpts": ["Exact quote 1", "Exact quote 2"],\n    "pageReferences": [1, 3],\n    "confidence": "high|medium|low"\n}\n\nOnly suggest scores from: ${criterion.validScores.join(', ')}`;
+        // Build system prompt - add vision context if enabled
+        const visionContext = state.visionEnabled && state.pdfPageImages.length > 0
+            ? `\n\nVISION ANALYSIS: You are also provided with ${state.pdfPageImages.length} page images from the PDF. Carefully examine these images for charts, graphs, tables, organizational diagrams, financial statements, and any visual evidence that supports or contradicts the application. Reference specific visual elements in your reasoning.`
+            : '';
+
+        const systemPrompt = `You are an expert NOFA reviewer for San Mateo County Department of Housing. You are evaluating criterion: "${criterion.question}"\n\nSCORING RULE:\n${criterion.scoringRule}\n\nPROJECT INFO:\n- Applicant: ${state.projectInfo.applicant || 'Unknown'}\n- Project: ${state.projectInfo.project || 'Unknown'}\n- Amount Requested: ${formatCurrency(state.projectInfo.amountRequested)}\n- Total Cost: ${formatCurrency(state.projectInfo.totalCost)}\n- Clients Served: ${formatNumber(state.projectInfo.clientsServed)}\n- Cost Per Client: ${costPerClient ? formatCurrency(costPerClient) : 'N/A'}\n- County % of Total: ${countyPercent ? countyPercent.toFixed(1) + '%' : 'N/A'}\n\nIMPORTANT: The application text includes BOTH the main narrative AND attachments/exhibits section. Look for evidence in attachments (financial statements, audits, organizational charts, letters of support, etc.) when evaluating criteria that reference them.${visionContext}\n\nProvide BOTH a recommendation AND a counter-argument.\n\nRespond with ONLY a JSON object:\n{\n    "suggestedScore": 2,\n    "reasoning": "Your detailed reasoning citing specific evidence from the application AND attachments${state.visionEnabled ? ', including any charts, graphs, or visual elements you observed' : ''}",\n    "counterArgument": "A thoughtful argument for why a different score might be appropriate",\n    "counterScore": 1,\n    "relevantExcerpts": ["Exact quote 1", "Exact quote 2"],\n    "pageReferences": [1, 3],\n    "confidence": "high|medium|low"\n}\n\nOnly suggest scores from: ${criterion.validScores.join(', ')}`;
+
         try {
-            // CONSISTENCY: Use normalized text in API call
-            const response = await callClaude(systemPrompt, `${criterion.aiPrompt}\n\nAPPLICATION TEXT:\n${normalizedText}`);
+            let response;
+
+            // Use vision API if enabled and images are available
+            if (state.visionEnabled && state.pdfPageImages.length > 0) {
+                console.log(`[Vision] Analyzing criterion ${criterion.id} with ${state.pdfPageImages.length} page images`);
+                response = await callClaudeWithVision(
+                    systemPrompt,
+                    `${criterion.aiPrompt}\n\nAPPLICATION TEXT:\n${normalizedText}\n\nThe images above show pages from the PDF application. Please analyze both the text and the visual elements (charts, graphs, tables, diagrams) when evaluating this criterion.`,
+                    state.pdfPageImages
+                );
+            } else {
+                // Standard text-only API call
+                response = await callClaude(systemPrompt, `${criterion.aiPrompt}\n\nAPPLICATION TEXT:\n${normalizedText}`);
+            }
+
             const jsonMatch = response.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 const parsedResponse = JSON.parse(jsonMatch[0]);
