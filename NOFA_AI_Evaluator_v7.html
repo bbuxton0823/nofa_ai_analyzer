@@ -332,7 +332,15 @@
                         <button onclick="pdfViewerPrevPage()" class="px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-100 text-sm" aria-label="Previous page">
                             ← Previous
                         </button>
-                        <span id="pdfPageIndicator" class="text-sm text-slate-600" aria-live="polite">Page 1</span>
+                        <div class="flex items-center gap-1 text-sm text-slate-600">
+                            <span>Page</span>
+                            <input type="number" id="pdfPageInput" min="1" value="1"
+                                class="w-14 px-2 py-1 border border-slate-300 rounded text-center text-sm"
+                                onkeyup="if(event.key==='Enter')goToPage()"
+                                onchange="goToPage()"
+                                aria-label="Go to page number">
+                            <span>of <span id="pdfTotalPages">1</span></span>
+                        </div>
                         <button onclick="pdfViewerNextPage()" class="px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-100 text-sm" aria-label="Next page">
                             Next →
                         </button>
@@ -1598,11 +1606,23 @@
         });
 
         document.getElementById('pdfViewerContent').innerHTML = `<div class="prose max-w-none"><div class="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">${displayText}</div></div>`;
-        document.getElementById('pdfPageIndicator').textContent = `Page ${state.pdfViewerCurrentPage + 1} of ${state.pdfPages.length}`;
+        // Update page input and total
+        document.getElementById('pdfPageInput').value = state.pdfViewerCurrentPage + 1;
+        document.getElementById('pdfPageInput').max = state.pdfPages.length;
+        document.getElementById('pdfTotalPages').textContent = state.pdfPages.length;
     }
 
     function pdfViewerPrevPage() { renderPdfPage(state.pdfViewerCurrentPage - 1, currentSearchTerms); }
     function pdfViewerNextPage() { renderPdfPage(state.pdfViewerCurrentPage + 1, currentSearchTerms); }
+
+    function goToPage() {
+        const input = document.getElementById('pdfPageInput');
+        let pageNum = parseInt(input.value, 10);
+        if (isNaN(pageNum) || pageNum < 1) pageNum = 1;
+        if (pageNum > state.pdfPages.length) pageNum = state.pdfPages.length;
+        input.value = pageNum; // Correct any out-of-range input
+        renderPdfPage(pageNum - 1, currentSearchTerms);
+    }
 
     function searchInPdf() {
         const term = document.getElementById('pdfSearchInput').value.trim();
