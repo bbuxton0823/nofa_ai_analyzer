@@ -22,7 +22,7 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 
 ## Quick Start
 
-1. **Open the Application**: Double-click `NOFA_AI_Evaluator_v6.html`
+1. **Open the Application**: Double-click `NOFA_AI_Evaluator_v7.html`
 2. **Load a Template**: Upload your Excel scoring template
 3. **Enter Application**: Paste or type the application text
 4. **Run Evaluation**: Click "Start Evaluation"
@@ -77,7 +77,7 @@ To pre-configure a shared API key for your team:
 
 1. Get an API Key at [console.anthropic.com](https://console.anthropic.com)
 2. Set spending limits in the Anthropic Console
-3. Open `NOFA_AI_Evaluator_v6.html` in a text editor
+3. Open `NOFA_AI_Evaluator_v7.html` in a text editor
 4. Find `SHARED_API_KEY` in the configuration
 5. Replace the empty quotes with your API key:
 
@@ -86,6 +86,13 @@ const SHARED_API_KEY = 'sk-ant-api03-your-key-here';
 ```
 
 Distribute the modified file to your team.
+
+## Version History
+
+| Version | Changes |
+|---------|---------|
+| v7 | Fixed duplicate file upload bug that caused PDFs and Excel files to require uploading twice |
+| v6 | Initial public release with full AI-assisted scoring workflow |
 
 ## What AI Does vs. Does NOT Do
 
@@ -101,8 +108,8 @@ Distribute the modified file to your team.
 
 | Metric | Value |
 |--------|-------|
-| Lines of Code | 3,900+ |
-| Development Versions | 6 major iterations |
+| Lines of Code | 3,899 |
+| Development Versions | 7 major iterations |
 | Evaluation Criteria | 15+ unique scoring areas |
 | Template Support | Flexible (any NOFA format) |
 
