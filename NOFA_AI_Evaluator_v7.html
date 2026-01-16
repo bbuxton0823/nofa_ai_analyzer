@@ -244,6 +244,53 @@
                     </div>
                 </div>
 
+                <!-- Admin Diagnostics Section -->
+                <div class="mt-6 pt-4 border-t border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Admin Diagnostics</p>
+                            <p class="text-xs text-slate-500">Document analysis statistics</p>
+                        </div>
+                        <button onclick="toggleDiagnosticsPanel()" class="px-3 py-1.5 text-sm border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors">
+                            <span id="diagnosticsToggleText">Show</span>
+                        </button>
+                    </div>
+                    <div id="diagnosticsPanel" class="hidden bg-slate-50 rounded-lg p-3 text-xs font-mono space-y-1">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="text-slate-600">Total Pages:</div>
+                            <div id="diagTotalPages" class="text-slate-800 font-semibold">-</div>
+                            <div class="text-slate-600">Total Characters:</div>
+                            <div id="diagTotalChars" class="text-slate-800 font-semibold">-</div>
+                            <div class="text-slate-600">Attachments Start:</div>
+                            <div id="diagAttachStart" class="text-slate-800 font-semibold">-</div>
+                        </div>
+                        <div class="border-t border-slate-200 my-2 pt-2">
+                            <div class="text-slate-500 mb-1">AI Analysis Coverage:</div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="text-slate-600">Main Content:</div>
+                                <div id="diagMainChars" class="text-green-700 font-semibold">-</div>
+                                <div class="text-slate-600">Attachments:</div>
+                                <div id="diagAttachChars" class="text-green-700 font-semibold">-</div>
+                                <div class="text-slate-600">Total to AI:</div>
+                                <div id="diagTotalToAI" class="text-blue-700 font-semibold">-</div>
+                                <div class="text-slate-600">Coverage:</div>
+                                <div id="diagCoverage" class="text-blue-700 font-semibold">-</div>
+                            </div>
+                        </div>
+                        <div class="border-t border-slate-200 my-2 pt-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="text-slate-600">Criteria Analyzed:</div>
+                                <div id="diagCriteriaCount" class="text-slate-800 font-semibold">-</div>
+                                <div class="text-slate-600">Last Analysis:</div>
+                                <div id="diagLastAnalysis" class="text-slate-800 font-semibold">-</div>
+                            </div>
+                        </div>
+                        <button onclick="copyDiagnosticsToClipboard()" class="w-full mt-2 px-2 py-1 text-xs bg-slate-200 hover:bg-slate-300 rounded transition-colors">
+                            Copy to Clipboard
+                        </button>
+                    </div>
+                </div>
+
                 <div class="flex gap-3 mt-6">
                     <button onclick="clearApiKey()" class="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors">
                         Clear Key
@@ -558,11 +605,19 @@
         const mainContent = getConsistentTextChunk(text, mainChunkSize);
         const attachmentContent = extractAttachmentContent(text);
 
+        // Update diagnostics
+        state.diagnostics.mainContentChars = mainContent.length;
+        state.diagnostics.attachmentChars = attachmentContent.length;
+        state.diagnostics.lastAnalysisTimestamp = new Date().toISOString();
+
         // If we have attachment content that's not already in main content, append it
         if (attachmentContent && !mainContent.includes(attachmentContent.substring(0, 200))) {
-            return mainContent + '\n\n=== ATTACHMENTS & EXHIBITS ===\n' + attachmentContent;
+            const combined = mainContent + '\n\n=== ATTACHMENTS & EXHIBITS ===\n' + attachmentContent;
+            console.log(`[AI Text] Main: ${mainContent.length} chars, Attachments: ${attachmentContent.length} chars, Total: ${combined.length} chars`);
+            return combined;
         }
 
+        console.log(`[AI Text] Main content only: ${mainContent.length} chars (attachments already included or not found)`);
         return mainContent;
     }
 
@@ -1026,7 +1081,17 @@
         originalScores: {}, // For tracking changes in global review
         documentHash: null, // Hash of normalized document for consistency tracking
         cachedCriteriaCount: 0, // Number of criteria served from cache
-        returnToSummary: false // Flag to return to summary after editing a single criterion
+        returnToSummary: false, // Flag to return to summary after editing a single criterion
+        // Diagnostics tracking
+        diagnostics: {
+            totalPages: 0,
+            totalCharacters: 0,
+            mainContentChars: 0,
+            attachmentChars: 0,
+            attachmentStartPage: null,
+            lastAnalysisTimestamp: null,
+            criteriaAnalyzed: 0
+        }
     };
 
     let autoSaveTimeout = null;
@@ -1278,6 +1343,85 @@
 
     function hideSettings() {
         document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    // ============================================================
+    // ADMIN DIAGNOSTICS PANEL
+    // ============================================================
+    function toggleDiagnosticsPanel() {
+        const panel = document.getElementById('diagnosticsPanel');
+        const toggleText = document.getElementById('diagnosticsToggleText');
+        if (panel.classList.contains('hidden')) {
+            updateDiagnosticsPanel();
+            panel.classList.remove('hidden');
+            toggleText.textContent = 'Hide';
+        } else {
+            panel.classList.add('hidden');
+            toggleText.textContent = 'Show';
+        }
+    }
+
+    function updateDiagnosticsPanel() {
+        const diag = state.diagnostics;
+
+        // Total document info
+        document.getElementById('diagTotalPages').textContent = diag.totalPages > 0 ? diag.totalPages : 'No PDF loaded';
+        document.getElementById('diagTotalChars').textContent = diag.totalCharacters > 0 ? diag.totalCharacters.toLocaleString() : '-';
+        document.getElementById('diagAttachStart').textContent = diag.attachmentStartPage ? `Page ${diag.attachmentStartPage}` : 'Not detected';
+
+        // AI analysis coverage
+        document.getElementById('diagMainChars').textContent = diag.mainContentChars > 0 ? diag.mainContentChars.toLocaleString() : '-';
+        document.getElementById('diagAttachChars').textContent = diag.attachmentChars > 0 ? diag.attachmentChars.toLocaleString() : '-';
+
+        const totalToAI = diag.mainContentChars + diag.attachmentChars;
+        document.getElementById('diagTotalToAI').textContent = totalToAI > 0 ? totalToAI.toLocaleString() : '-';
+
+        // Calculate coverage percentage
+        if (diag.totalCharacters > 0 && totalToAI > 0) {
+            const coverage = Math.min(100, (totalToAI / diag.totalCharacters) * 100).toFixed(1);
+            document.getElementById('diagCoverage').textContent = `${coverage}%`;
+        } else {
+            document.getElementById('diagCoverage').textContent = '-';
+        }
+
+        // Criteria and timestamp
+        document.getElementById('diagCriteriaCount').textContent = diag.criteriaAnalyzed > 0 ? diag.criteriaAnalyzed : '-';
+
+        if (diag.lastAnalysisTimestamp) {
+            const date = new Date(diag.lastAnalysisTimestamp);
+            document.getElementById('diagLastAnalysis').textContent = date.toLocaleString();
+        } else {
+            document.getElementById('diagLastAnalysis').textContent = 'Not yet analyzed';
+        }
+    }
+
+    function copyDiagnosticsToClipboard() {
+        const diag = state.diagnostics;
+        const totalToAI = diag.mainContentChars + diag.attachmentChars;
+        const coverage = diag.totalCharacters > 0 ? ((totalToAI / diag.totalCharacters) * 100).toFixed(1) : 0;
+
+        const text = `NOFA AI Evaluator - Document Diagnostics
+==========================================
+Document: ${state.projectInfo.projectName || 'Unnamed'}
+Total Pages: ${diag.totalPages}
+Total Characters: ${diag.totalCharacters.toLocaleString()}
+Attachments Start: ${diag.attachmentStartPage ? 'Page ' + diag.attachmentStartPage : 'Not detected'}
+
+AI Analysis Coverage:
+- Main Content: ${diag.mainContentChars.toLocaleString()} chars
+- Attachments: ${diag.attachmentChars.toLocaleString()} chars
+- Total Sent to AI: ${totalToAI.toLocaleString()} chars
+- Coverage: ${coverage}%
+
+Criteria Analyzed: ${diag.criteriaAnalyzed}
+Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestamp).toLocaleString() : 'N/A'}
+==========================================`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('success', 'Copied', 'Diagnostics copied to clipboard');
+        }).catch(() => {
+            showToast('error', 'Copy Failed', 'Could not copy to clipboard');
+        });
     }
 
     function saveSettings() {
@@ -1868,6 +2012,19 @@
             state.cachedCriteriaCount = 0; // Reset cache counter for new document
             console.log(`[Document Hash] ${state.documentHash.substring(0, 16)}...`);
 
+            // Update diagnostics
+            state.diagnostics.totalPages = pdf.numPages;
+            state.diagnostics.totalCharacters = fullText.length;
+            state.diagnostics.criteriaAnalyzed = 0;
+
+            // Find which page attachments start on
+            const attachmentPageIndex = state.pdfPages.findIndex(pageText =>
+                /attachment\s*1\s*:|attachments?\s*index|exhibit\s*a\s*:/i.test(pageText)
+            );
+            state.diagnostics.attachmentStartPage = attachmentPageIndex !== -1 ? attachmentPageIndex + 1 : null;
+
+            console.log(`[Diagnostics] Pages: ${pdf.numPages}, Total chars: ${fullText.length}, Attachments start: Page ${state.diagnostics.attachmentStartPage || 'N/A'}`);
+
             hideLoading();
             showToast('success', 'PDF Loaded', `Successfully extracted ${pdf.numPages} pages.`);
             if (state.apiKey) await extractProjectInfo();
@@ -2005,6 +2162,8 @@
                 const parsedResponse = JSON.parse(jsonMatch[0]);
                 // CONSISTENCY: Cache the response
                 setCachedResponse(inputHash, criterion.id, parsedResponse);
+                // Track criteria analyzed for diagnostics
+                state.diagnostics.criteriaAnalyzed++;
                 return parsedResponse;
             }
             return null;

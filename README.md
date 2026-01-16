@@ -91,7 +91,7 @@ Distribute the modified file to your team.
 
 | Version | Changes |
 |---------|---------|
-| v7 | Fixed duplicate file upload bug; Fixed "Back to Evidence" navigation; Added page number input for direct navigation; Improved AI analysis to include attachments/exhibits content |
+| v7 | Fixed duplicate file upload bug; Fixed "Back to Evidence" navigation; Added page number input for direct navigation; Improved AI analysis to include attachments/exhibits content; Added admin diagnostics panel |
 | v6 | Initial public release with full AI-assisted scoring workflow |
 
 ## What AI Does vs. Does NOT Do
@@ -108,7 +108,7 @@ Distribute the modified file to your team.
 
 | Metric | Value |
 |--------|-------|
-| Lines of Code | 3,973 |
+| Lines of Code | 4,132 |
 | Development Versions | 7 major iterations |
 | Evaluation Criteria | 15+ unique scoring areas |
 | Template Support | Flexible (any NOFA format) |
