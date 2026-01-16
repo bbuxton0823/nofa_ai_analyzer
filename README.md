@@ -91,7 +91,7 @@ Distribute the modified file to your team.
 
 | Version | Changes |
 |---------|---------|
-| v7 | Fixed duplicate file upload bug that caused PDFs and Excel files to require uploading twice |
+| v7 | Fixed duplicate file upload bug; Fixed "Back to Evidence" button not returning to evidence modal |
 | v6 | Initial public release with full AI-assisted scoring workflow |
 
 ## What AI Does vs. Does NOT Do

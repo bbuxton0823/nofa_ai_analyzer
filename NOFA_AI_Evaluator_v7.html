@@ -1526,8 +1526,10 @@
 
     function backToEvidenceModal() {
         if (currentEvidenceCriterion) {
+            // BUGFIX: Save criterion ID before hidePdfViewer() clears it
+            const criterionId = currentEvidenceCriterion;
             hidePdfViewer();
-            showEvidenceForCriterion(currentEvidenceCriterion);
+            showEvidenceForCriterion(criterionId);
         }
     }
 
