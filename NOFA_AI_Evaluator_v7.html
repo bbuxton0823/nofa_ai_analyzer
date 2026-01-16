@@ -238,10 +238,16 @@
                             <p class="text-sm font-medium text-slate-700">AI Response Cache</p>
                             <p class="text-xs text-slate-500">Cached responses ensure consistent scoring for the same document</p>
                         </div>
-                        <button onclick="clearResponseCache(); hideSettings();" class="px-3 py-1.5 text-sm border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors">
-                            Clear Cache
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="clearResponseCache(); hideSettings();" class="px-3 py-1.5 text-sm border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors" title="Clear localStorage cache only - keeps current session data">
+                                Clear Cache
+                            </button>
+                            <button onclick="clearAllAndReset();" class="px-3 py-1.5 text-sm border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors" title="Clear cache AND reset current AI suggestions for fresh re-analysis">
+                                Full Reset
+                            </button>
+                        </div>
                     </div>
+                    <p class="text-xs text-slate-400 mt-2">Clear Cache: removes stored responses. Full Reset: also clears current session's AI suggestions for complete re-analysis.</p>
                 </div>
 
                 <!-- Admin Diagnostics Section -->
@@ -553,6 +559,27 @@
         localStorage.removeItem(CONFIG.RESPONSE_CACHE_KEY);
         console.log('[Cache CLEARED]');
         showToast('info', 'Cache Cleared', 'AI responses will be regenerated on next analysis.');
+    }
+
+    // Full reset: clear cache AND in-memory AI suggestions for complete fresh start
+    function clearAllAndReset() {
+        // Clear localStorage cache
+        localStorage.removeItem(CONFIG.RESPONSE_CACHE_KEY);
+
+        // Clear in-memory AI suggestions
+        state.aiSuggestions = {};
+
+        // Reset diagnostics counters
+        state.diagnostics.mainContentChars = 0;
+        state.diagnostics.attachmentChars = 0;
+        state.diagnostics.criteriaAnalyzed = 0;
+        state.diagnostics.lastAnalysisTimestamp = null;
+        state.cachedCriteriaCount = 0;
+
+        console.log('[FULL RESET] Cache and AI suggestions cleared');
+        hideSettings();
+        showToast('warning', 'Full Reset Complete', 'All AI suggestions cleared. Run Auto-Analyze to generate fresh analysis.');
+        render();
     }
 
     // Get deterministic text chunk for AI analysis
