@@ -2170,15 +2170,37 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
     function searchInPdf() {
         const term = document.getElementById('pdfSearchInput').value.trim();
         if (!term) return;
+
+        // Find all pages containing the search term
+        const matchingPages = [];
         for (let i = 0; i < state.pdfPages.length; i++) {
             if (state.pdfPages[i].toLowerCase().includes(term.toLowerCase())) {
-                currentSearchTerms = [term];
-                state.pdfViewerCurrentPage = i;
-                renderPdfPage(i, [term]);
-                return;
+                matchingPages.push(i);
             }
         }
-        showToast('info', 'Not Found', 'Term not found in document.');
+
+        if (matchingPages.length === 0) {
+            showToast('info', 'Not Found', `"${term}" not found in document.`);
+            return;
+        }
+
+        // Find next matching page from current position (allows cycling through matches)
+        let nextPage = matchingPages.find(p => p > state.pdfViewerCurrentPage);
+        if (nextPage === undefined) {
+            nextPage = matchingPages[0]; // Wrap to first match
+        }
+
+        // Update search terms and navigate to page
+        currentSearchTerms = [term];
+        state.pdfViewerCurrentPage = nextPage;
+        renderPdfPage(nextPage, [term]);
+
+        // Show result message
+        if (pdfViewMode === 'visual') {
+            showToast('success', 'Found', `Page ${nextPage + 1} (${matchingPages.length} match${matchingPages.length > 1 ? 'es' : ''}). Use Text view for highlighting.`);
+        } else {
+            showToast('success', 'Found', `Page ${nextPage + 1} of ${matchingPages.length} match${matchingPages.length > 1 ? 'es' : ''}`);
+        }
     }
 
     // Helper function to find the best page for excerpts
