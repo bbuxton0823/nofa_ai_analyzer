@@ -2947,7 +2947,16 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
         showLoading('Analyzing Application', 'AI is extracting project information...');
         // CONSISTENCY: Use normalized text for project info extraction
         const normalizedText = getConsistentTextChunk(state.applicationText, 15000);
-        const systemPrompt = `You are a NOFA application reviewer for San Mateo County. Extract key project information from the application text. Return ONLY a JSON object with these exact fields: { "applicant": "Organization name", "project": "Project title", "amountRequested": 75000, "totalCost": 150000, "clientsServed": 500, "projectDescription": "Brief 2-3 sentence description" }. Use numbers without formatting for monetary values. If not found, use null.`;
+        const systemPrompt = `You are a NOFA application reviewer for San Mateo County. Extract key project information from the application text. Return ONLY a JSON object with these exact fields: { "applicant": "Organization name", "project": "Project title", "amountRequested": 75000, "totalCost": 150000, "clientsServed": 500, "projectDescription": "Brief 2-3 sentence description", "detectedFundingSource": "HOME|CDBG|HOME+CDBG|Other|null", "fundingSourceReasoning": "Brief explanation of why this funding source was detected" }.
+
+FUNDING SOURCE DETECTION RULES:
+- HOME: Housing development, housing rehabilitation, tenant-based rental assistance, homebuyer assistance, affordable housing projects
+- CDBG: Public services (food programs, senior services, youth programs, homeless services), public facilities, infrastructure improvements, economic development, code enforcement
+- HOME+CDBG: Projects that combine housing AND public services/facilities
+- Other: Projects funded by other sources (ESG, HOPWA, etc.)
+
+Look for explicit mentions of funding source on cover pages, budget sections, or check boxes. If not explicit, infer from project type.
+Use numbers without formatting for monetary values. If not found, use null.`;
         try {
             const response = await callClaude(systemPrompt, `Extract project information:\n\n${normalizedText}`);
             const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -4312,14 +4321,33 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
                                     </div>
                                 </div>
                             </div>
-                            <select id="fundingSource" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" aria-required="true">
-                                <option value="">Select funding source...</option>
-                                <option value="HOME" ${state.recommendation.fundingSource === 'HOME' ? 'selected' : ''}>HOME</option>
-                                <option value="CDBG" ${state.recommendation.fundingSource === 'CDBG' ? 'selected' : ''}>CDBG</option>
-                                <option value="HOME+CDBG" ${state.recommendation.fundingSource === 'HOME+CDBG' ? 'selected' : ''}>HOME + CDBG</option>
-                                <option value="Other" ${state.recommendation.fundingSource === 'Other' ? 'selected' : ''}>Other</option>
-                                <option value="None" ${state.recommendation.fundingSource === 'None' ? 'selected' : ''}>Do Not Recommend</option>
-                            </select>
+                            <div class="flex gap-2">
+                                <select id="fundingSource" class="flex-1 px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" aria-required="true">
+                                    <option value="">Select funding source...</option>
+                                    <option value="HOME" ${state.recommendation.fundingSource === 'HOME' ? 'selected' : ''}>HOME</option>
+                                    <option value="CDBG" ${state.recommendation.fundingSource === 'CDBG' ? 'selected' : ''}>CDBG</option>
+                                    <option value="HOME+CDBG" ${state.recommendation.fundingSource === 'HOME+CDBG' ? 'selected' : ''}>HOME + CDBG</option>
+                                    <option value="Other" ${state.recommendation.fundingSource === 'Other' ? 'selected' : ''}>Other</option>
+                                    <option value="None" ${state.recommendation.fundingSource === 'None' ? 'selected' : ''}>Do Not Recommend</option>
+                                </select>
+                                <button onclick="applyDetectedFundingSource()" id="applyFundingSourceBtn" class="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-xl flex items-center gap-1 transition-colors ${state.projectInfo.detectedFundingSource ? '' : 'hidden'}" title="Apply AI-detected funding source">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    Apply AI Suggestion
+                                </button>
+                            </div>
+                            ${state.projectInfo.detectedFundingSource ? `
+                            <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex items-start gap-2">
+                                    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                    </svg>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-blue-800">AI Detected: <span class="font-bold">${state.projectInfo.detectedFundingSource}</span></p>
+                                        <p class="text-xs text-blue-600 mt-1">${state.projectInfo.fundingSourceReasoning || 'Based on application content analysis'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
                         </div>
 
                         <div>
@@ -4363,6 +4391,30 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
         // Auto-generate if empty and API key available
         if (state.apiKey && !state.recommendation.summaryComments && !state.recommendation.questions) {
             setTimeout(() => generateAIBoth(), 500);
+        }
+    }
+
+    // Apply AI-detected funding source to the dropdown
+    function applyDetectedFundingSource() {
+        if (!state.projectInfo.detectedFundingSource) {
+            showToast('info', 'No Detection', 'AI has not detected a funding source yet.');
+            return;
+        }
+
+        const fundingSelect = document.getElementById('fundingSource');
+        if (fundingSelect) {
+            // Map detected source to dropdown value
+            const detected = state.projectInfo.detectedFundingSource;
+            const validValues = ['HOME', 'CDBG', 'HOME+CDBG', 'Other', 'None'];
+
+            if (validValues.includes(detected)) {
+                fundingSelect.value = detected;
+                state.recommendation.fundingSource = detected;
+                showToast('success', 'Funding Source Applied', `Set to ${detected} based on AI analysis.`);
+                debouncedAutoSave();
+            } else {
+                showToast('warning', 'Unknown Source', `AI detected "${detected}" which is not a standard option.`);
+            }
         }
     }
 
