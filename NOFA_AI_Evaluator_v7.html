@@ -2139,7 +2139,8 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
                     return;
                 }
             } else {
-                showPdfLoadError(canvas, ctx, 'No PDF loaded. Please upload a document.');
+                // This happens when restoring a saved draft - text was saved but PDF file wasn't
+                showPdfReuploadPrompt(canvas, ctx);
                 return;
             }
         }
@@ -2192,6 +2193,81 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
         ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+    }
+
+    // Show re-upload prompt when viewing restored draft without PDF file
+    function showPdfReuploadPrompt(canvas, ctx) {
+        // Hide the canvas and show a helpful message in the visual view container
+        canvas.style.display = 'none';
+
+        const visualView = document.getElementById('pdfVisualView');
+        const existingPrompt = visualView.querySelector('.reupload-prompt');
+        if (existingPrompt) return; // Already showing prompt
+
+        const promptDiv = document.createElement('div');
+        promptDiv.className = 'reupload-prompt text-center p-8';
+        promptDiv.innerHTML = `
+            <div class="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto">
+                <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 mb-2">PDF File Needed for Visual View</h3>
+                <p class="text-sm text-slate-600 mb-4">
+                    This is a restored session. The text content was saved, but PDF files cannot be stored in the browser.
+                    To view the visual PDF with charts and graphics, please re-upload the same PDF file.
+                </p>
+                <p class="text-xs text-slate-500 mb-4">
+                    <strong>Your scores and comments are safe</strong> — re-uploading will only add visual viewing capability.
+                </p>
+                <div class="flex gap-3 justify-center">
+                    <label class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                        <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                        </svg>
+                        Re-upload PDF
+                        <input type="file" accept=".pdf" class="hidden" onchange="reuploadPdfForViewer(this.files[0])">
+                    </label>
+                    <button onclick="setPdfViewMode('text')" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                        Use Text View
+                    </button>
+                </div>
+            </div>
+        `;
+        visualView.appendChild(promptDiv);
+    }
+
+    // Handle PDF re-upload from the visual viewer prompt
+    async function reuploadPdfForViewer(file) {
+        if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
+            showToast('error', 'Invalid File', 'Please select a PDF file.');
+            return;
+        }
+
+        try {
+            // Store the file and load the PDF document
+            state.applicationPDF = file;
+            const arrayBuffer = await file.arrayBuffer();
+            state.pdfDocument = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+            // Remove the re-upload prompt
+            const visualView = document.getElementById('pdfVisualView');
+            const prompt = visualView.querySelector('.reupload-prompt');
+            if (prompt) prompt.remove();
+
+            // Show the canvas again
+            const canvas = document.getElementById('pdfCanvas');
+            canvas.style.display = 'block';
+
+            // Render the current page
+            renderVisualPdfPage(state.pdfViewerCurrentPage);
+
+            showToast('success', 'PDF Loaded', 'Visual view is now available. Your scores and comments are preserved.');
+        } catch (error) {
+            console.error('[PDF Reupload] Error:', error);
+            showToast('error', 'Upload Failed', 'Could not load the PDF file. Please try again.');
+        }
     }
 
     // Render PDF page as text with highlighting (original functionality)
