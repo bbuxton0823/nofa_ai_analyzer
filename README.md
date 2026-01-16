@@ -91,6 +91,12 @@ Distribute the modified file to your team.
 
 | Version | Changes |
 |---------|---------|
+| v7.10 | AI-powered funding source auto-detection; Analyzes application to suggest HOME, CDBG, or HOME+CDBG with reasoning; One-click "Apply AI Suggestion" button |
+| v7.9 | Fixed PDF orientation bug (respects page rotation metadata); Added funding source help tooltip explaining where to find info in applications |
+| v7.8 | Added re-upload prompt for restored sessions; Explains PDF files can't be stored in browser and provides easy re-upload button |
+| v7.7 | Fixed visual PDF viewer blank pages issue; Better error handling and PDF document reload |
+| v7.6 | Fixed scroll behavior - prevents background scrolling when mouse is over modal/PDF viewer |
+| v7.5 | Added Escape key and click-outside to close all modals; Shows "Pending analysis" in diagnostics when document loaded but not yet analyzed |
 | v7.4 | Added visual PDF viewer with full graphics/charts display; Toggle between Visual and Text views; Zoom controls (50%-300%); All page navigation features work in both modes |
 | v7.3 | Performance optimizations: parallel PDF page extraction (5x faster), parallel API batch processing (3 concurrent calls), retry logic with exponential backoff, in-memory caching, debounced rendering |
 | v7.2 | Added automatic vision detection - system now scans PDFs for charts/graphs and auto-enables vision analysis when visual content is detected |
@@ -104,17 +110,18 @@ Distribute the modified file to your team.
 |--------------|---------------------|
 | Reads and analyzes text | Make final funding decisions |
 | Analyzes charts, graphs, and tables (with Vision enabled) | Override your judgment |
-| Applies consistent criteria | Store or share your data |
-| Explains its reasoning | Submit anything automatically |
-| Suggests scores for review | Replace human expertise |
+| Detects and suggests appropriate funding source | Store or share your data |
+| Applies consistent criteria | Submit anything automatically |
+| Explains its reasoning | Replace human expertise |
+| Suggests scores for review | |
 | Saves you time | |
 
 ## Development
 
 | Metric | Value |
 |--------|-------|
-| Lines of Code | 4,132 |
-| Development Versions | 7 major iterations |
+| Lines of Code | 5,105 |
+| Development Versions | 10 minor releases (v7.x series) |
 | Evaluation Criteria | 15+ unique scoring areas |
 | Template Support | Flexible (any NOFA format) |
 
