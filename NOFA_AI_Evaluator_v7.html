@@ -1394,6 +1394,19 @@
     function updateDiagnosticsPanel() {
         const diag = state.diagnostics;
 
+        // Recalculate document stats if they're missing but document is loaded
+        // (This happens after page refresh since diagnostics aren't persisted)
+        if (diag.totalPages === 0 && state.pdfPages && state.pdfPages.length > 0) {
+            diag.totalPages = state.pdfPages.length;
+            diag.totalCharacters = state.applicationText ? state.applicationText.length : 0;
+            // Recalculate attachment start page
+            const attachmentPageIndex = state.pdfPages.findIndex(pageText =>
+                /attachment\s*1\s*:|attachments?\s*index|exhibit\s*a\s*:/i.test(pageText)
+            );
+            diag.attachmentStartPage = attachmentPageIndex !== -1 ? attachmentPageIndex + 1 : null;
+            console.log(`[Diagnostics] Recalculated from loaded document: ${diag.totalPages} pages, ${diag.totalCharacters} chars`);
+        }
+
         // Total document info
         document.getElementById('diagTotalPages').textContent = diag.totalPages > 0 ? diag.totalPages : 'No PDF loaded';
         document.getElementById('diagTotalChars').textContent = diag.totalCharacters > 0 ? diag.totalCharacters.toLocaleString() : '-';
