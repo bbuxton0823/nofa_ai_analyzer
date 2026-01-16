@@ -434,7 +434,8 @@
         AUTO_SAVE_KEY: 'nofa_evaluation_draft',
         AUTO_SAVE_DEBOUNCE_MS: 1000,
         RESPONSE_CACHE_KEY: 'nofa_ai_response_cache',  // Cache AI responses by input hash
-        TEXT_CHUNK_SIZE: 20000,  // Fixed chunk size for consistency
+        TEXT_CHUNK_SIZE: 40000,  // Increased chunk size to capture more content including attachments
+        ATTACHMENT_CHUNK_SIZE: 30000,  // Additional space for attachment/exhibit content
         TEMPLATE_PROFILES_KEY: 'nofa_template_profiles'  // Storage key for custom templates
     };
 
@@ -512,6 +513,57 @@
         const normalized = normalizeText(text);
         // Always take from the beginning for consistency
         return normalized.substring(0, maxLength);
+    }
+
+    // Extract attachment/exhibit sections from document for comprehensive AI analysis
+    function extractAttachmentContent(text) {
+        const normalized = normalizeText(text);
+        const attachmentContent = [];
+
+        // Patterns to find attachment/exhibit sections
+        const attachmentPatterns = [
+            /attachment\s*\d+[:\s]*[^\n]{0,100}/gi,
+            /exhibit\s*[a-z0-9]+[:\s]*[^\n]{0,100}/gi,
+            /appendix\s*[a-z0-9]+[:\s]*[^\n]{0,100}/gi,
+            /--- page \d+ ---[\s\S]{0,5000}(?=--- page|$)/gi  // Capture page blocks
+        ];
+
+        // Find where attachments section starts (usually has "Attachments" or "Attachment 1")
+        const attachmentStartPatterns = [
+            /attachment\s*1\s*:/i,
+            /attachments?\s*index/i,
+            /section\s*\d+\s*:\s*attachments/i,
+            /exhibit\s*a\s*:/i
+        ];
+
+        let attachmentStartIndex = -1;
+        for (const pattern of attachmentStartPatterns) {
+            const match = normalized.search(pattern);
+            if (match !== -1 && (attachmentStartIndex === -1 || match < attachmentStartIndex)) {
+                attachmentStartIndex = match;
+            }
+        }
+
+        // If we found an attachments section, extract it
+        if (attachmentStartIndex !== -1) {
+            const attachmentSection = normalized.substring(attachmentStartIndex, attachmentStartIndex + CONFIG.ATTACHMENT_CHUNK_SIZE);
+            return attachmentSection;
+        }
+
+        return '';
+    }
+
+    // Get comprehensive text for AI including main content and attachments
+    function getComprehensiveTextForAI(text, mainChunkSize = CONFIG.TEXT_CHUNK_SIZE) {
+        const mainContent = getConsistentTextChunk(text, mainChunkSize);
+        const attachmentContent = extractAttachmentContent(text);
+
+        // If we have attachment content that's not already in main content, append it
+        if (attachmentContent && !mainContent.includes(attachmentContent.substring(0, 200))) {
+            return mainContent + '\n\n=== ATTACHMENTS & EXHIBITS ===\n' + attachmentContent;
+        }
+
+        return mainContent;
     }
 
     // ============================================================
@@ -1929,8 +1981,8 @@
         const costPerClient = state.projectInfo.totalCost && state.projectInfo.clientsServed ? state.projectInfo.totalCost / state.projectInfo.clientsServed : null;
         const countyPercent = state.projectInfo.amountRequested && state.projectInfo.totalCost ? (state.projectInfo.amountRequested / state.projectInfo.totalCost) * 100 : null;
 
-        // CONSISTENCY: Normalize and get fixed-size text chunk
-        const normalizedText = getConsistentTextChunk(state.applicationText, CONFIG.TEXT_CHUNK_SIZE);
+        // CONSISTENCY: Get comprehensive text including main content AND attachments/exhibits
+        const normalizedText = getComprehensiveTextForAI(state.applicationText, CONFIG.TEXT_CHUNK_SIZE);
 
         // CONSISTENCY: Generate hash for caching
         const inputForHash = `${criterion.id}_${normalizedText}_${JSON.stringify(state.projectInfo)}`;
@@ -1944,7 +1996,7 @@
             return cachedResponse;
         }
 
-        const systemPrompt = `You are an expert NOFA reviewer for San Mateo County Department of Housing. You are evaluating criterion: "${criterion.question}"\n\nSCORING RULE:\n${criterion.scoringRule}\n\nPROJECT INFO:\n- Applicant: ${state.projectInfo.applicant || 'Unknown'}\n- Project: ${state.projectInfo.project || 'Unknown'}\n- Amount Requested: ${formatCurrency(state.projectInfo.amountRequested)}\n- Total Cost: ${formatCurrency(state.projectInfo.totalCost)}\n- Clients Served: ${formatNumber(state.projectInfo.clientsServed)}\n- Cost Per Client: ${costPerClient ? formatCurrency(costPerClient) : 'N/A'}\n- County % of Total: ${countyPercent ? countyPercent.toFixed(1) + '%' : 'N/A'}\n\nProvide BOTH a recommendation AND a counter-argument.\n\nIMPORTANT: Respond with ONLY a JSON object:\n{\n    "suggestedScore": 2,\n    "reasoning": "Your detailed reasoning citing specific evidence",\n    "counterArgument": "A thoughtful argument for why a different score might be appropriate",\n    "counterScore": 1,\n    "relevantExcerpts": ["Exact quote 1", "Exact quote 2"],\n    "pageReferences": [1, 3],\n    "confidence": "high|medium|low"\n}\n\nOnly suggest scores from: ${criterion.validScores.join(', ')}`;
+        const systemPrompt = `You are an expert NOFA reviewer for San Mateo County Department of Housing. You are evaluating criterion: "${criterion.question}"\n\nSCORING RULE:\n${criterion.scoringRule}\n\nPROJECT INFO:\n- Applicant: ${state.projectInfo.applicant || 'Unknown'}\n- Project: ${state.projectInfo.project || 'Unknown'}\n- Amount Requested: ${formatCurrency(state.projectInfo.amountRequested)}\n- Total Cost: ${formatCurrency(state.projectInfo.totalCost)}\n- Clients Served: ${formatNumber(state.projectInfo.clientsServed)}\n- Cost Per Client: ${costPerClient ? formatCurrency(costPerClient) : 'N/A'}\n- County % of Total: ${countyPercent ? countyPercent.toFixed(1) + '%' : 'N/A'}\n\nIMPORTANT: The application text includes BOTH the main narrative AND attachments/exhibits section. Look for evidence in attachments (financial statements, audits, organizational charts, letters of support, etc.) when evaluating criteria that reference them.\n\nProvide BOTH a recommendation AND a counter-argument.\n\nRespond with ONLY a JSON object:\n{\n    "suggestedScore": 2,\n    "reasoning": "Your detailed reasoning citing specific evidence from the application AND attachments",\n    "counterArgument": "A thoughtful argument for why a different score might be appropriate",\n    "counterScore": 1,\n    "relevantExcerpts": ["Exact quote 1", "Exact quote 2"],\n    "pageReferences": [1, 3],\n    "confidence": "high|medium|low"\n}\n\nOnly suggest scores from: ${criterion.validScores.join(', ')}`;
         try {
             // CONSISTENCY: Use normalized text in API call
             const response = await callClaude(systemPrompt, `${criterion.aiPrompt}\n\nAPPLICATION TEXT:\n${normalizedText}`);
