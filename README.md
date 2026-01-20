@@ -4,6 +4,25 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 
 ![NOFA AI Evaluator Demo](demo.gif)
 
+---
+
+## ⬇️ One-Click Install
+
+**No installation required!** Just download and open.
+
+### [📥 Download NOFA AI Evaluator v7.12](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/latest/download/NOFA_AI_Evaluator_v7.12.html)
+
+**How to use:**
+1. Click the download link above
+2. Open the downloaded `NOFA_AI_Evaluator_v7.12.html` file in your browser (double-click it)
+3. That's it! The tool runs entirely in your browser
+
+> 💡 **Tip**: Save the file somewhere easy to find (like your Desktop) for quick access.
+
+> 🔐 **For Teams**: Administrators can pre-configure an API key before distributing. See [Administrator Setup](#administrator-setup) below.
+
+---
+
 ## Why This Tool?
 
 - **Increase Capacity**: Review more applications that serve our community
@@ -22,7 +41,7 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 
 ## Quick Start
 
-1. **Open the Application**: Double-click `NOFA_AI_Evaluator_v7.html`
+1. **Open the Application**: Double-click `NOFA_AI_Evaluator_v7.12.html`
 2. **Load a Template**: Upload your Excel scoring template
 3. **Enter Application**: Paste or type the application text
 4. **Run Evaluation**: Click "Start Evaluation"
@@ -77,7 +96,7 @@ To pre-configure a shared API key for your team:
 
 1. Get an API Key at [console.anthropic.com](https://console.anthropic.com)
 2. Set spending limits in the Anthropic Console
-3. Open `NOFA_AI_Evaluator_v7.html` in a text editor
+3. Open `NOFA_AI_Evaluator_v7.12.html` in a text editor
 4. Find `SHARED_API_KEY` in the configuration
 5. Replace the empty quotes with your API key:
 
@@ -91,6 +110,8 @@ Distribute the modified file to your team.
 
 | Version | Changes |
 |---------|---------|
+| v7.12 | **Nonprofit-Appropriate Evaluation**: AI prompts now use nonprofit financial evaluation standards; Fiscal stability scoring updated to assess audit findings, funding diversity, and reserve levels instead of profit metrics; Leveraging criteria recognize multi-year grant relationships and contract renewals; System prompt includes nonprofit context to prevent penalizing organizations for normal grant-seeking behavior |
+| v7.11 | **Reference Documents Upload**: Upload Funding Priorities and NOFA Guidelines PDFs; Documents stored locally and persist across sessions; AI cross-references applications against actual County priorities; Cite specific priority names in scoring reasoning |
 | v7.10 | AI-powered funding source auto-detection; Analyzes application to suggest HOME, CDBG, or HOME+CDBG with reasoning; One-click "Apply AI Suggestion" button |
 | v7.9 | Fixed PDF orientation bug (respects page rotation metadata); Added funding source help tooltip explaining where to find info in applications |
 | v7.8 | Added re-upload prompt for restored sessions; Explains PDF files can't be stored in browser and provides easy re-upload button |
@@ -120,8 +141,8 @@ Distribute the modified file to your team.
 
 | Metric | Value |
 |--------|-------|
-| Lines of Code | 5,105 |
-| Development Versions | 10 minor releases (v7.x series) |
+| Lines of Code | 5,450+ |
+| Development Versions | 12 minor releases (v7.x series) |
 | Evaluation Criteria | 15+ unique scoring areas |
 | Template Support | Flexible (any NOFA format) |
 
