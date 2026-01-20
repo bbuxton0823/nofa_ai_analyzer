@@ -10,11 +10,11 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 
 **No installation required!** Just download and open.
 
-### [📥 Download NOFA AI Evaluator v7.15](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/latest/download/NOFA_AI_Evaluator_v7.15.html)
+### [📥 Download NOFA AI Evaluator v7.19](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/latest/download/NOFA_AI_Evaluator_v7.19.html)
 
 **How to use:**
 1. Click the download link above
-2. Open the downloaded `NOFA_AI_Evaluator_v7.15.html` file in your browser (double-click it)
+2. Open the downloaded `NOFA_AI_Evaluator_v7.19.html` file in your browser (double-click it)
 3. That's it! The tool runs entirely in your browser
 
 > 💡 **Tip**: Save the file somewhere easy to find (like your Desktop) for quick access.
@@ -41,7 +41,7 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 
 ## Quick Start
 
-1. **Open the Application**: Double-click `NOFA_AI_Evaluator_v7.15.html`
+1. **Open the Application**: Double-click `NOFA_AI_Evaluator_v7.19.html`
 2. **Load a Template**: Upload your Excel scoring template
 3. **Enter Application**: Paste or type the application text
 4. **Run Evaluation**: Click "Start Evaluation"
@@ -96,7 +96,7 @@ To pre-configure a shared API key for your team:
 
 1. Get an API Key at [console.anthropic.com](https://console.anthropic.com)
 2. Set spending limits in the Anthropic Console
-3. Open `NOFA_AI_Evaluator_v7.15.html` in a text editor
+3. Open `NOFA_AI_Evaluator_v7.19.html` in a text editor
 4. Find `SHARED_API_KEY` in the configuration
 5. Replace the empty quotes with your API key:
 
@@ -110,6 +110,10 @@ Distribute the modified file to your team.
 
 | Version | Changes |
 |---------|---------|
+| v7.19 | **Word Document Support**: Added Mammoth.js library to parse .docx files directly in browser; Auto-fetch now extracts text from Word documents for AI analysis; Legacy .doc files show helpful message to convert to .docx or PDF; Better status indicators for unsupported file formats |
+| v7.18 | **AI-Powered Document Classification**: Documents are now automatically classified by content analysis, not just filename; AI reads document text and categorizes it (audit, budget, board docs, etc.) even when naming conventions vary; Purple "🤖 AI Classified" badge shows when a document was intelligently categorized; Works globally across different document naming styles and formats |
+| v7.17 | **Smart Document Recommendations**: Each evaluation criterion now shows which supporting documents are relevant; Hints like "⭐ Review: Audit/Financial, Budget" guide reviewers to the right documents; Click to see all related documents with explanations of why they matter for scoring; Priority indicators highlight must-review documents |
+| v7.16 | **Linked Documents in PDF Viewer**: Added collapsible Linked Documents panel directly in PDF viewer; Reviewers can click any link to open supporting documents in new tabs; Documents grouped by type (Audit, Budget, Exhibit, etc.); Shows fetch status and includes auto-fetch button for one-click analysis |
 | v7.15 | **Linked Documents Analysis**: Automatically extracts hyperlinks from uploaded application PDFs; Displays linked documents panel showing all referenced documents (audits, budgets, exhibits); Auto-fetch feature retrieves and analyzes linked PDFs; AI evaluation now includes content from linked supporting documents for more accurate scoring |
 | v7.14 | **PDF Zoom Scroll Fix**: Fixed issue where zoomed PDF couldn't scroll to see left edge; PDF now properly scrolls in all directions when zoomed |
 | v7.13 | **PDF Viewer Fix**: Fixed bug where Visual PDF viewer displayed pages upside-down on first load; Removed double-rotation issue in PDF rendering |

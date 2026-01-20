@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOFA AI Evaluator v7.15 - San Mateo County FY26-27</title>
+    <title>NOFA AI Evaluator v7.19 - San Mateo County FY26-27</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- ExcelJS for formatting-preserving Excel export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+    <!-- Mammoth.js for Word document (.docx) parsing (v7.19) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <style>
         .drop-zone { transition: all 0.3s ease; }
         .drop-zone.dragover { background: #dbeafe; border-color: #3b82f6; transform: scale(1.02); }
@@ -97,7 +99,7 @@
                             </svg>
                         </div>
                         <div>
-                            <h1 class="text-2xl font-bold">NOFA AI Evaluator <span class="text-blue-300 text-lg">v7.15</span></h1>
+                            <h1 class="text-2xl font-bold">NOFA AI Evaluator <span class="text-blue-300 text-lg">v7.19</span></h1>
                             <p class="text-blue-200 text-sm">Winter FY26-27 • San Mateo County • AI-Assisted Scoring</p>
                         </div>
                     </div>
@@ -118,6 +120,13 @@
                         <div id="apiDot" class="w-2 h-2 rounded-full bg-red-400" aria-hidden="true"></div>
                         <span id="apiText" class="text-xs">No API Key</span>
                     </div>
+                    <!-- API Error Warning Indicator (v7.19) -->
+                    <button id="apiErrorIndicator" onclick="showLastErrorSummary()" class="hidden items-center gap-2 bg-amber-500/90 hover:bg-amber-500 px-3 py-2 rounded-lg transition-colors cursor-pointer" title="Click for details">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span id="apiErrorText" class="text-xs text-white font-medium">0 Failed</span>
+                    </button>
                 </div>
             </div>
         </header>
@@ -349,7 +358,7 @@
                     </div>
                 </div>
 
-                <!-- Linked Documents Section (v7.15) -->
+                <!-- Linked Documents Section (v7.17) -->
                 <div class="mt-4 pt-4 border-t border-slate-200">
                     <div class="flex items-center justify-between mb-3">
                         <div>
@@ -479,6 +488,29 @@
             <div id="pdfTextView" class="pdf-viewer p-6 flex-1 overflow-y-auto hidden" role="document">
                 <!-- PDF text content will be rendered here -->
             </div>
+
+            <!-- Linked Documents Panel in PDF Viewer (v7.17) -->
+            <div id="pdfLinkedDocsPanel" class="border-t border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 hidden">
+                <button onclick="togglePdfLinkedDocsPanel()" class="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-100/50 transition-colors">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                        <span class="font-medium text-blue-800">Linked Documents</span>
+                        <span id="pdfLinkedDocsCount" class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <svg id="pdfLinkedDocsChevron" class="w-5 h-5 text-blue-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="pdfLinkedDocsContent" class="hidden px-4 pb-4 max-h-64 overflow-y-auto">
+                    <p class="text-xs text-slate-500 mb-2">Click any document to open it in a new tab for manual review:</p>
+                    <div id="pdfLinkedDocsList" class="space-y-1">
+                        <!-- Linked documents will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
             <div class="p-4 border-t border-slate-200 bg-slate-50 flex-shrink-0">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
@@ -688,7 +720,7 @@
         </div>
     </div>
 
-    <!-- Linked Documents Modal (v7.15) -->
+    <!-- Linked Documents Modal (v7.17) -->
     <div id="linkedDocsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="linkedDocsTitle">
         <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] shadow-2xl flex flex-col">
             <div class="p-6 border-b border-slate-200 flex-shrink-0">
@@ -753,6 +785,53 @@
                         Done
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- External Document Viewer Modal (v7.19) -->
+    <div id="externalDocViewerModal" class="fixed inset-0 bg-black/70 z-[60] hidden flex items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div class="bg-white rounded-2xl w-full max-w-6xl h-[90vh] shadow-2xl flex flex-col">
+            <div class="p-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 id="externalDocTitle" class="text-lg font-bold text-slate-800">Document Viewer</h3>
+                        <p id="externalDocSubtitle" class="text-sm text-slate-500">Legacy format - viewing via external service</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a id="externalDocDownloadBtn" href="#" target="_blank" class="px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Open Original
+                    </a>
+                    <button onclick="closeExternalDocViewer()" class="text-slate-400 hover:text-slate-600 p-2" aria-label="Close">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 bg-slate-100 relative overflow-hidden">
+                <div id="externalDocLoading" class="absolute inset-0 flex items-center justify-center bg-white">
+                    <div class="text-center">
+                        <div class="w-12 h-12 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto mb-4"></div>
+                        <p class="text-slate-600">Loading document viewer...</p>
+                        <p class="text-xs text-slate-400 mt-1">Using Google Docs Viewer</p>
+                    </div>
+                </div>
+                <iframe id="externalDocFrame" class="w-full h-full border-0" src="about:blank"></iframe>
+            </div>
+            <div class="p-3 border-t border-slate-200 bg-slate-50 flex-shrink-0">
+                <p class="text-xs text-slate-500 text-center">
+                    <span class="text-amber-600">⚠️</span> Legacy .doc files are displayed using Google Docs Viewer. For best results and AI analysis, ask applicants to submit .docx or PDF formats.
+                </p>
             </div>
         </div>
     </div>
@@ -912,7 +991,7 @@
     }
 
     // ============================================================
-    // LINKED DOCUMENTS EXTRACTION & FETCHING (v7.15)
+    // LINKED DOCUMENTS EXTRACTION & FETCHING (v7.17)
     // ============================================================
 
     // Extract hyperlinks from a PDF document
@@ -1039,7 +1118,302 @@
         return labels[type] || labels['other'];
     }
 
+    // Criteria to relevant document types mapping (v7.17)
+    // Maps criterion IDs to document types that are relevant for evaluation
+    const CRITERIA_DOCUMENT_MAP = {
+        // Section 2: Applicant Capacity
+        '2a': {
+            docTypes: ['exhibit', 'reference', 'document'],
+            reason: 'Experience documentation, past performance reports, and program outcomes may be in exhibits'
+        },
+        '2b': {
+            docTypes: ['exhibit', 'document'],
+            reason: 'Outcome measurement tools, data collection forms, or evaluation methods may be attached'
+        },
+        '2c': {
+            docTypes: ['exhibit', 'compliance', 'document'],
+            reason: 'Past QPR submissions or HMIS documentation may demonstrate administrative experience'
+        },
+        '2d': {
+            docTypes: ['audit', 'budget', 'nonprofit-status'],
+            reason: 'Audited financial statements (Exhibit 7), budget documents, and IRS determination letters show fiscal stability',
+            priority: true
+        },
+        // Section 3: Project Feasibility
+        '3a': {
+            docTypes: ['exhibit', 'document'],
+            reason: 'Program history, start dates, and operational timelines may be in supporting documents'
+        },
+        '3b': {
+            docTypes: ['exhibit', 'document'],
+            reason: 'Implementation timelines and launch schedules may be attached'
+        },
+        '3c': {
+            docTypes: ['exhibit', 'document', 'reference'],
+            reason: 'Previous grant award letters or funding history documentation'
+        },
+        '3d': {
+            docTypes: ['exhibit', 'org-chart', 'governance'],
+            reason: 'Partnership agreements, MOUs, or collaboration documentation may be attached'
+        },
+        '3e': {
+            docTypes: ['exhibit', 'document'],
+            reason: 'Unique program features or innovative approaches may be detailed in exhibits'
+        },
+        // Section 4: Cost Effectiveness
+        '4a': {
+            docTypes: ['budget', 'exhibit'],
+            reason: 'Detailed budget breakdown shows how costs are calculated per client',
+            priority: true
+        },
+        // Section 5: Leveraging
+        '5b': {
+            docTypes: ['budget', 'exhibit', 'document'],
+            reason: 'Funding commitment letters, grant award notices, or pending application documentation'
+        },
+        '5c': {
+            docTypes: ['budget', 'exhibit', 'document'],
+            reason: 'Letters of commitment, funding history, or relationship documentation with funders'
+        },
+        '5d': {
+            docTypes: ['budget'],
+            reason: 'Budget documents show the breakdown of County vs. other funding sources',
+            priority: true
+        },
+        // Section 1: Need for Project (if present)
+        '1a': {
+            docTypes: ['exhibit', 'document', 'reference'],
+            reason: 'Needs assessment data, demographic analysis, or priority population documentation'
+        },
+        '1b': {
+            docTypes: ['exhibit', 'document'],
+            reason: 'Client demographic data and income eligibility documentation'
+        }
+    };
+
+    // Get recommended linked documents for a specific criterion (v7.17)
+    function getRecommendedDocumentsForCriterion(criterionId) {
+        const links = state.linkedDocuments.links;
+        if (!links || links.length === 0) return null;
+
+        const mapping = CRITERIA_DOCUMENT_MAP[criterionId];
+        if (!mapping) return null;
+
+        // Find linked documents that match the relevant types
+        const relevantDocs = links.filter(link => mapping.docTypes.includes(link.type));
+
+        if (relevantDocs.length === 0) return null;
+
+        return {
+            documents: relevantDocs,
+            reason: mapping.reason,
+            priority: mapping.priority || false
+        };
+    }
+
+    // Build HTML for document recommendations (v7.17)
+    function buildDocumentRecommendationsHTML(criterionId) {
+        const recommendations = getRecommendedDocumentsForCriterion(criterionId);
+        if (!recommendations) return '';
+
+        const fetched = state.linkedDocuments.fetched;
+        const { documents, reason, priority } = recommendations;
+
+        let html = `
+            <div class="mt-3 p-3 rounded-lg ${priority ? 'bg-amber-50 border border-amber-200' : 'bg-blue-50 border border-blue-200'}">
+                <div class="flex items-start gap-2 mb-2">
+                    <svg class="w-5 h-5 ${priority ? 'text-amber-600' : 'text-blue-600'} flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                        <p class="text-sm font-medium ${priority ? 'text-amber-800' : 'text-blue-800'}">
+                            ${priority ? '⭐ Key Supporting Documents' : '📎 Related Supporting Documents'}
+                        </p>
+                        <p class="text-xs ${priority ? 'text-amber-700' : 'text-blue-700'} mt-0.5">${reason}</p>
+                    </div>
+                </div>
+                <div class="space-y-1 ml-7">`;
+
+        documents.forEach(doc => {
+            const fetchedDoc = fetched[doc.url];
+            let statusBadge = '';
+            if (fetchedDoc?.status === 'success') {
+                statusBadge = '<span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded ml-2">✓ Analyzed by AI</span>';
+            }
+
+            html += `
+                <a href="${doc.url}" target="_blank" rel="noopener noreferrer"
+                   class="flex items-center justify-between p-2 bg-white rounded border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors group text-sm">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="text-xs text-slate-500">${getLinkTypeLabel(doc.type)}</span>
+                        <span class="font-medium text-slate-700 truncate" title="${doc.name}">${doc.name}</span>
+                        ${statusBadge}
+                    </div>
+                    <svg class="w-4 h-4 text-blue-500 flex-shrink-0 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                </a>`;
+        });
+
+        html += `
+                </div>
+            </div>`;
+
+        return html;
+    }
+
+    // Build compact document hint for criterion cards (v7.17)
+    function buildCriterionDocumentHint(criterionId) {
+        const recommendations = getRecommendedDocumentsForCriterion(criterionId);
+        if (!recommendations) return '';
+
+        const { documents, reason, priority } = recommendations;
+        const fetchedCount = documents.filter(d => state.linkedDocuments.fetched[d.url]?.status === 'success').length;
+
+        // Get unique document types
+        const docTypes = [...new Set(documents.map(d => getLinkTypeLabel(d.type)))];
+
+        return `
+            <div class="mt-3 p-2 rounded-lg ${priority ? 'bg-amber-50 border border-amber-100' : 'bg-blue-50 border border-blue-100'}">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 ${priority ? 'text-amber-500' : 'text-blue-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                        <span class="text-xs ${priority ? 'text-amber-700' : 'text-blue-700'}">
+                            ${priority ? '⭐ Review:' : '📎 May reference:'} ${docTypes.slice(0, 3).join(', ')}${docTypes.length > 3 ? '...' : ''}
+                        </span>
+                        ${fetchedCount > 0 ? `<span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">${fetchedCount} analyzed</span>` : ''}
+                    </div>
+                    <button onclick="showDocumentRecommendationsModal('${criterionId}')" class="text-xs ${priority ? 'text-amber-600 hover:text-amber-800' : 'text-blue-600 hover:text-blue-800'} font-medium">
+                        View ${documents.length} docs →
+                    </button>
+                </div>
+            </div>`;
+    }
+
+    // Show modal with document recommendations for a criterion (v7.17)
+    function showDocumentRecommendationsModal(criterionId) {
+        const criterion = CRITERIA.find(c => c.id === criterionId);
+        const recommendations = getRecommendedDocumentsForCriterion(criterionId);
+
+        if (!recommendations) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'docRecommendationsModal';
+        overlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+        overlay.innerHTML = `
+            <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
+                <div class="p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">${criterionId.toUpperCase()}: Supporting Documents</h3>
+                            <p class="text-sm text-slate-600 mt-1">${criterion?.question || ''}</p>
+                        </div>
+                        <button onclick="document.getElementById('docRecommendationsModal').remove()" class="text-slate-400 hover:text-slate-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-4 overflow-y-auto flex-1">
+                    <div class="bg-slate-50 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-slate-700">
+                            <span class="font-semibold">💡 Why these documents?</span><br>
+                            ${recommendations.reason}
+                        </p>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-500 mb-2">LINKED DOCUMENTS (${recommendations.documents.length}):</p>
+                    <div class="space-y-2">
+                        ${recommendations.documents.map(doc => {
+                            const fetchedDoc = state.linkedDocuments.fetched[doc.url];
+                            let statusBadge = '';
+                            let bgClass = 'bg-white';
+
+                            if (fetchedDoc?.status === 'success') {
+                                statusBadge = '<span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">✓ Analyzed by AI</span>';
+                                bgClass = 'bg-green-50';
+                            } else if (fetchedDoc?.status === 'error') {
+                                statusBadge = '<span class="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">⚠ Fetch failed</span>';
+                            }
+
+                            return `
+                                <a href="${doc.url}" target="_blank" rel="noopener noreferrer"
+                                   class="flex items-center justify-between p-3 ${bgClass} rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors group">
+                                    <div class="flex-1 min-w-0 mr-2">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-xs text-slate-500">${getLinkTypeLabel(doc.type)}</span>
+                                            ${statusBadge}
+                                        </div>
+                                        <p class="font-medium text-slate-700 truncate" title="${doc.name}">${doc.name}</p>
+                                        <p class="text-xs text-slate-500">Found on page ${doc.pageNum}</p>
+                                    </div>
+                                    <svg class="w-5 h-5 text-blue-500 flex-shrink-0 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                    </svg>
+                                </a>`;
+                        }).join('')}
+                    </div>
+                </div>
+                <div class="p-4 border-t border-slate-200 bg-slate-50">
+                    <button onclick="document.getElementById('docRecommendationsModal').remove()" class="w-full px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>`;
+
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
     // Fetch a single linked document
+    // CORS-aware fetch helper (v7.19) - tries direct fetch first, then CORS proxy
+    async function fetchWithCorsRetry(url) {
+        // First try direct fetch
+        try {
+            const response = await fetch(url);
+            if (response.ok) {
+                return { response, method: 'direct' };
+            }
+            throw new Error(`HTTP ${response.status}`);
+        } catch (directError) {
+            // Check if it's likely a CORS error (Failed to fetch from file:// origin)
+            const isCorsError = directError.message === 'Failed to fetch' ||
+                               directError.message.includes('CORS') ||
+                               directError.message.includes('NetworkError');
+
+            if (isCorsError) {
+                console.log(`[Linked Docs] CORS blocked for ${url}, trying proxy...`);
+
+                // Try multiple CORS proxies as fallbacks
+                const corsProxies = [
+                    'https://corsproxy.io/?',
+                    'https://api.allorigins.win/raw?url=',
+                    'https://cors-anywhere.herokuapp.com/'
+                ];
+
+                for (const proxy of corsProxies) {
+                    try {
+                        const proxyUrl = proxy + encodeURIComponent(url);
+                        const response = await fetch(proxyUrl);
+                        if (response.ok) {
+                            console.log(`[Linked Docs] Successfully fetched via proxy: ${proxy}`);
+                            return { response, method: 'proxy', proxy };
+                        }
+                    } catch (proxyError) {
+                        console.log(`[Linked Docs] Proxy ${proxy} failed:`, proxyError.message);
+                        continue; // Try next proxy
+                    }
+                }
+
+                // All proxies failed - throw CORS-specific error
+                throw new Error('CORS_BLOCKED: Document server does not allow cross-origin requests. Click the link icon to open directly.');
+            }
+
+            // Re-throw non-CORS errors
+            throw directError;
+        }
+    }
+
     async function fetchLinkedDocument(link) {
         const url = link.url;
 
@@ -1054,8 +1428,8 @@
             const isDoc = url.toLowerCase().match(/\.(doc|docx)$/);
 
             if (isPDF) {
-                // Fetch and extract PDF
-                const response = await fetch(url);
+                // Fetch and extract PDF using CORS-aware helper
+                const { response } = await fetchWithCorsRetry(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
                 const arrayBuffer = await response.arrayBuffer();
@@ -1089,20 +1463,66 @@
                 return result;
 
             } else if (isDoc) {
-                // Can't easily parse .doc/.docx in browser without additional libraries
-                state.linkedDocuments.fetched[url] = {
-                    text: null,
-                    name: link.name,
-                    type: link.type,
-                    status: 'unsupported',
-                    error: 'Word documents (.doc/.docx) cannot be automatically parsed. Please review manually.',
-                    fetchedAt: new Date().toISOString()
-                };
-                return state.linkedDocuments.fetched[url];
+                // Parse Word documents using Mammoth.js (v7.19)
+                const isDocx = url.toLowerCase().endsWith('.docx');
+                const isOldDoc = url.toLowerCase().endsWith('.doc');
+
+                if (isDocx && typeof mammoth !== 'undefined') {
+                    // Fetch and parse .docx with Mammoth.js using CORS-aware helper
+                    const { response } = await fetchWithCorsRetry(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const arrayBuffer = await response.arrayBuffer();
+                    const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                    const text = result.value || '';
+
+                    const maxChars = 50000;
+                    const truncated = text.length > maxChars;
+                    const finalText = truncated ? text.substring(0, maxChars) : text;
+
+                    const docResult = {
+                        text: finalText,
+                        name: link.name,
+                        type: link.type,
+                        status: 'success',
+                        charCount: finalText.length,
+                        truncated: truncated,
+                        format: 'docx',
+                        fetchedAt: new Date().toISOString()
+                    };
+
+                    state.linkedDocuments.fetched[url] = docResult;
+                    return docResult;
+
+                } else if (isOldDoc) {
+                    // Old .doc format is not supported (binary format requires server-side processing)
+                    state.linkedDocuments.fetched[url] = {
+                        text: null,
+                        name: link.name,
+                        type: link.type,
+                        status: 'unsupported',
+                        error: 'Legacy .doc format requires conversion. Please save as .docx or PDF.',
+                        format: 'doc',
+                        fetchedAt: new Date().toISOString()
+                    };
+                    return state.linkedDocuments.fetched[url];
+
+                } else {
+                    // Mammoth.js not loaded, fall back to unsupported
+                    state.linkedDocuments.fetched[url] = {
+                        text: null,
+                        name: link.name,
+                        type: link.type,
+                        status: 'unsupported',
+                        error: 'Word document parser not available. Please review manually.',
+                        fetchedAt: new Date().toISOString()
+                    };
+                    return state.linkedDocuments.fetched[url];
+                }
 
             } else {
-                // Try to fetch as text
-                const response = await fetch(url);
+                // Try to fetch as text using CORS-aware helper
+                const { response } = await fetchWithCorsRetry(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
                 const text = await response.text();
@@ -1122,15 +1542,125 @@
 
         } catch (error) {
             console.warn(`[Linked Docs] Failed to fetch ${url}:`, error.message);
+
+            // Check if this is a CORS error (v7.19)
+            const isCorsError = error.message.includes('CORS_BLOCKED') ||
+                               error.message === 'Failed to fetch';
+
             state.linkedDocuments.fetched[url] = {
                 text: null,
                 name: link.name,
                 type: link.type,
-                status: 'error',
-                error: error.message,
+                status: isCorsError ? 'cors_blocked' : 'error',
+                error: isCorsError
+                    ? 'Cross-origin blocked. Open document directly using the link icon.'
+                    : error.message,
                 fetchedAt: new Date().toISOString()
             };
             return state.linkedDocuments.fetched[url];
+        }
+    }
+
+    // AI-powered document classification based on content (v7.18)
+    async function classifyDocumentWithAI(text, currentType, documentName) {
+        // Skip if no API key or text is too short
+        if (!state.apiKey || !text || text.length < 100) {
+            return currentType;
+        }
+
+        // Take a sample of the document (first 3000 chars) for classification
+        const sample = text.substring(0, 3000);
+
+        const classificationPrompt = `Analyze this document excerpt and classify it into ONE of these categories:
+
+CATEGORIES:
+- audit: Financial audits, audited financial statements, audit reports, single audit reports, A-133 audits
+- budget: Program budgets, operating budgets, budget narratives, budget justifications, line-item budgets
+- board: Board resolutions, board meeting minutes, board rosters, board member lists
+- nonprofit-status: IRS determination letters, 501(c)(3) status letters, tax-exempt status documentation
+- exhibit: General exhibits, attachments, supplementary materials (use if clearly labeled as exhibit)
+- org-chart: Organizational charts, staff structure diagrams, reporting hierarchies
+- governance: Bylaws, articles of incorporation, corporate governance documents
+- compliance: Conflict of interest policies, code of ethics, compliance certifications
+- mission: Mission statements, vision statements, organizational purpose documents
+- other: Documents that don't clearly fit any category above
+
+DOCUMENT NAME: "${documentName}"
+
+DOCUMENT EXCERPT:
+${sample}
+
+Respond with ONLY the category name (one word, lowercase). If unsure, respond with the most likely category based on content.`;
+
+        try {
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': state.apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 50,
+                    messages: [{
+                        role: 'user',
+                        content: classificationPrompt
+                    }]
+                })
+            });
+
+            if (!response.ok) {
+                console.warn('[AI Classification] API error, using URL-based classification');
+                return currentType;
+            }
+
+            const data = await response.json();
+            const classification = data.content?.[0]?.text?.trim().toLowerCase();
+
+            // Validate the classification is one of our known types
+            const validTypes = ['audit', 'budget', 'board', 'nonprofit-status', 'exhibit', 'org-chart', 'governance', 'compliance', 'mission', 'other'];
+            if (validTypes.includes(classification)) {
+                console.log(`[AI Classification] "${documentName}": ${currentType} → ${classification}`);
+                return classification;
+            }
+
+            return currentType;
+
+        } catch (error) {
+            console.warn('[AI Classification] Error:', error.message);
+            return currentType;
+        }
+    }
+
+    // Reclassify a linked document based on its fetched content (v7.18)
+    async function reclassifyFetchedDocument(url) {
+        const fetchedDoc = state.linkedDocuments.fetched[url];
+        const link = state.linkedDocuments.links.find(l => l.url === url);
+
+        if (!fetchedDoc || !link || fetchedDoc.status !== 'success' || !fetchedDoc.text) {
+            return;
+        }
+
+        // Only reclassify if current type is generic ('document', 'exhibit', 'other')
+        const genericTypes = ['document', 'exhibit', 'other'];
+        if (!genericTypes.includes(link.type)) {
+            // Already has a specific classification from URL
+            return;
+        }
+
+        const newType = await classifyDocumentWithAI(fetchedDoc.text, link.type, link.name);
+
+        if (newType !== link.type) {
+            // Update the link's type
+            link.type = newType;
+            fetchedDoc.type = newType;
+            fetchedDoc.aiClassified = true;
+
+            // Update UI to reflect new classification
+            updateLinkedDocsUI();
+            updatePdfLinkedDocsPanel();
         }
     }
 
@@ -1152,6 +1682,7 @@
         let fetched = 0;
         let succeeded = 0;
         let failed = 0;
+        let corsBlocked = 0;
 
         for (const link of fetchableLinks) {
             try {
@@ -1162,6 +1693,7 @@
 
                 const result = await fetchLinkedDocument(link);
                 if (result.status === 'success') succeeded++;
+                else if (result.status === 'cors_blocked') corsBlocked++;
                 else failed++;
 
             } catch (err) {
@@ -1172,18 +1704,54 @@
             state.linkedDocuments.fetchProgress = Math.round((fetched / fetchableLinks.length) * 100);
         }
 
+        // AI classification phase for documents with generic types (v7.18)
+        const docsToClassify = fetchableLinks.filter(link => {
+            const fetched = state.linkedDocuments.fetched[link.url];
+            const genericTypes = ['document', 'exhibit', 'other'];
+            return fetched?.status === 'success' && genericTypes.includes(link.type);
+        });
+
+        if (docsToClassify.length > 0 && state.apiKey) {
+            updateLoadingProgress(100, `Classifying ${docsToClassify.length} documents with AI...`);
+            showLoading('Analyzing Documents', `AI is classifying ${docsToClassify.length} documents by content...`, true);
+
+            let classified = 0;
+            for (const link of docsToClassify) {
+                updateLoadingProgress(
+                    Math.round((classified / docsToClassify.length) * 100),
+                    `Classifying: ${link.name}`
+                );
+                await reclassifyFetchedDocument(link.url);
+                classified++;
+            }
+        }
+
         state.linkedDocuments.isFetching = false;
         hideLoading();
         updateLinkedDocsUI();
+        updatePdfLinkedDocsPanel(); // Update PDF viewer panel too
 
         // Clear response cache since we have new context
         clearResponseCache();
 
-        showToast(
-            succeeded > 0 ? 'success' : 'warning',
-            'Documents Fetched',
-            `Successfully retrieved ${succeeded} of ${fetchableLinks.length} documents.${failed > 0 ? ` ${failed} failed.` : ''}`
-        );
+        const classifiedCount = docsToClassify.filter(l => state.linkedDocuments.fetched[l.url]?.aiClassified).length;
+        let message = `Successfully retrieved ${succeeded} of ${fetchableLinks.length} documents.`;
+        if (corsBlocked > 0) message += ` ${corsBlocked} blocked by CORS (use View button).`;
+        if (failed > 0) message += ` ${failed} other failures.`;
+        if (classifiedCount > 0) message += ` AI classified ${classifiedCount} documents.`;
+
+        // Show appropriate toast based on results
+        const toastType = corsBlocked > 0 ? 'warning' : (succeeded > 0 ? 'success' : 'warning');
+        const toastTitle = corsBlocked > 0 ? 'Documents Partially Fetched' : 'Documents Fetched';
+
+        showToast(toastType, toastTitle, message);
+
+        // Show additional info if many CORS blocked
+        if (corsBlocked >= 3) {
+            showToast('info', 'CORS Restriction Info',
+                'Documents are hosted on a server that blocks browser requests. Click the View button to open them in Google Docs viewer, or use the link icon to open directly.'
+            );
+        }
     }
 
     // Build context from fetched linked documents for AI prompts
@@ -1244,6 +1812,9 @@
                         } else if (fetchedDoc.status === 'error') {
                             statusIcon = '❌';
                             statusClass = 'bg-red-50 border-red-200';
+                        } else if (fetchedDoc.status === 'cors_blocked') {
+                            statusIcon = '🔒';
+                            statusClass = 'bg-orange-50 border-orange-200';
                         } else if (fetchedDoc.status === 'unsupported') {
                             statusIcon = '⚠️';
                             statusClass = 'bg-yellow-50 border-yellow-200';
@@ -1257,20 +1828,34 @@
                         <div class="p-2 border rounded ${statusClass} text-sm">
                             <div class="flex items-start justify-between gap-2">
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-1">
+                                    <div class="flex items-center gap-1 flex-wrap">
                                         <span class="text-xs">${getLinkTypeLabel(link.type)}</span>
+                                        ${fetchedDoc?.aiClassified ? '<span class="text-xs bg-purple-100 text-purple-700 px-1 py-0.5 rounded">🤖 AI</span>' : ''}
                                         ${statusIcon ? `<span>${statusIcon}</span>` : ''}
                                     </div>
                                     <p class="font-medium text-slate-700 truncate" title="${link.name}">${link.name}</p>
                                     <p class="text-xs text-slate-500">Page ${link.pageNum}</p>
-                                    ${fetchedDoc?.status === 'success' ? `<p class="text-xs text-green-600">${fetchedDoc.charCount?.toLocaleString() || 0} chars extracted</p>` : ''}
+                                    ${fetchedDoc?.status === 'success' ? `<p class="text-xs text-green-600">${fetchedDoc.charCount?.toLocaleString() || 0} chars extracted${fetchedDoc.format === 'docx' ? ' (Word doc)' : ''}</p>` : ''}
                                     ${fetchedDoc?.status === 'error' ? `<p class="text-xs text-red-600">${fetchedDoc.error}</p>` : ''}
+                                    ${fetchedDoc?.status === 'cors_blocked' ? `<p class="text-xs text-orange-600">🔒 ${fetchedDoc.error}</p>` : ''}
+                                    ${fetchedDoc?.status === 'unsupported' ? `<p class="text-xs text-amber-600">${fetchedDoc.error}</p>` : ''}
                                 </div>
-                                <a href="${link.url}" target="_blank" class="text-blue-600 hover:text-blue-800 flex-shrink-0" title="Open in new tab">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                                    </svg>
-                                </a>
+                                <div class="flex flex-col gap-1 flex-shrink-0">
+                                    ${(fetchedDoc?.status === 'unsupported' && fetchedDoc?.format === 'doc') || fetchedDoc?.status === 'cors_blocked' ? `
+                                        <button onclick="openExternalDocViewer('${link.url}', '${link.name.replace(/'/g, "\\'")}'); event.stopPropagation();" class="px-2 py-1 ${fetchedDoc?.status === 'cors_blocked' ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'} rounded text-xs font-medium transition-colors flex items-center gap-1" title="View in app using Google Docs">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            View
+                                        </button>
+                                    ` : ''}
+                                    <a href="${link.url}" target="_blank" class="text-blue-600 hover:text-blue-800 p-1" title="Open in new tab">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                        </svg>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -1308,6 +1893,219 @@
             if (!modal.classList.contains('hidden')) {
                 updateLinkedDocsUI();
             }
+        }
+    }
+
+    // Toggle PDF viewer linked documents panel (v7.17)
+    function togglePdfLinkedDocsPanel() {
+        const content = document.getElementById('pdfLinkedDocsContent');
+        const chevron = document.getElementById('pdfLinkedDocsChevron');
+        if (content && chevron) {
+            content.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        }
+    }
+
+    // Open external document viewer for legacy formats (v7.19)
+    function openExternalDocViewer(url, name) {
+        const modal = document.getElementById('externalDocViewerModal');
+        const frame = document.getElementById('externalDocFrame');
+        const title = document.getElementById('externalDocTitle');
+        const subtitle = document.getElementById('externalDocSubtitle');
+        const downloadBtn = document.getElementById('externalDocDownloadBtn');
+        const loading = document.getElementById('externalDocLoading');
+
+        if (!modal || !frame) return;
+
+        // Set document info
+        if (title) title.textContent = name || 'Document Viewer';
+        if (subtitle) {
+            const ext = url.split('.').pop().toLowerCase();
+            subtitle.textContent = ext === 'doc'
+                ? 'Legacy .doc format - viewing via Google Docs'
+                : `Viewing ${ext.toUpperCase()} file via Google Docs`;
+        }
+        if (downloadBtn) downloadBtn.href = url;
+
+        // Show loading state
+        if (loading) loading.classList.remove('hidden');
+
+        // Use Google Docs Viewer to display the document
+        // Format: https://docs.google.com/gview?url=ENCODED_URL&embedded=true
+        const encodedUrl = encodeURIComponent(url);
+        const viewerUrl = `https://docs.google.com/gview?url=${encodedUrl}&embedded=true`;
+
+        frame.src = viewerUrl;
+
+        // Show modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Handle iframe load completion
+    function onExternalDocFrameLoad() {
+        const loading = document.getElementById('externalDocLoading');
+        if (loading) {
+            // Small delay to ensure content is rendered
+            setTimeout(() => {
+                loading.classList.add('hidden');
+            }, 500);
+        }
+    }
+
+    // Close external document viewer
+    function closeExternalDocViewer() {
+        const modal = document.getElementById('externalDocViewerModal');
+        const frame = document.getElementById('externalDocFrame');
+        const loading = document.getElementById('externalDocLoading');
+
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        if (frame) {
+            frame.src = 'about:blank'; // Clear iframe
+        }
+        if (loading) {
+            loading.classList.remove('hidden'); // Reset loading for next use
+        }
+    }
+
+    // Update PDF viewer linked documents panel (v7.17)
+    function updatePdfLinkedDocsPanel() {
+        const panel = document.getElementById('pdfLinkedDocsPanel');
+        const count = document.getElementById('pdfLinkedDocsCount');
+        const list = document.getElementById('pdfLinkedDocsList');
+
+        if (!panel) return;
+
+        const links = state.linkedDocuments.links;
+        const fetched = state.linkedDocuments.fetched;
+
+        // Show/hide panel based on whether links exist
+        if (links.length === 0) {
+            panel.classList.add('hidden');
+            return;
+        }
+
+        panel.classList.remove('hidden');
+
+        // Update count badge
+        if (count) {
+            count.textContent = links.length;
+        }
+
+        // Render list of linked documents
+        if (list) {
+            // Group links by type for better organization
+            const linksByType = {};
+            links.forEach(link => {
+                if (!linksByType[link.type]) {
+                    linksByType[link.type] = [];
+                }
+                linksByType[link.type].push(link);
+            });
+
+            // Sort types by importance
+            const typeOrder = ['audit', 'budget', 'board', 'nonprofit-status', 'exhibit', 'org-chart', 'governance', 'compliance', 'mission', 'other'];
+            const sortedTypes = Object.keys(linksByType).sort((a, b) => {
+                return (typeOrder.indexOf(a) === -1 ? 999 : typeOrder.indexOf(a)) -
+                       (typeOrder.indexOf(b) === -1 ? 999 : typeOrder.indexOf(b));
+            });
+
+            let html = '';
+            sortedTypes.forEach(type => {
+                const typeLinks = linksByType[type];
+                html += `<div class="mb-2">
+                    <div class="text-xs font-semibold text-slate-600 mb-1">${getLinkTypeLabel(type)} (${typeLinks.length})</div>`;
+
+                typeLinks.forEach(link => {
+                    const fetchedDoc = fetched[link.url];
+                    let statusBadge = '';
+                    let bgClass = 'bg-white hover:bg-slate-50';
+
+                    if (fetchedDoc) {
+                        if (fetchedDoc.status === 'success') {
+                            statusBadge = '<span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">✓ Analyzed</span>';
+                            // Add AI classification badge if document was classified by AI (v7.18)
+                            if (fetchedDoc.aiClassified) {
+                                statusBadge += ' <span class="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">🤖 AI Classified</span>';
+                            }
+                            bgClass = 'bg-green-50 hover:bg-green-100';
+                        } else if (fetchedDoc.status === 'error') {
+                            statusBadge = '<span class="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">⚠ Fetch failed</span>';
+                            bgClass = 'bg-red-50 hover:bg-red-100';
+                        } else if (fetchedDoc.status === 'cors_blocked') {
+                            statusBadge = '<span class="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">🔒 CORS blocked</span>';
+                            bgClass = 'bg-orange-50 hover:bg-orange-100';
+                        } else if (fetchedDoc.status === 'unsupported') {
+                            statusBadge = `<span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">⚠ ${fetchedDoc.format === 'doc' ? 'Legacy .doc' : 'Unsupported'}</span>`;
+                            bgClass = 'bg-amber-50 hover:bg-amber-100';
+                        }
+                    } else if (link.fetchable) {
+                        statusBadge = '<span class="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Can fetch</span>';
+                    }
+
+                    // Check if this needs the View button (legacy doc or CORS blocked)
+                    const needsViewButton = (fetchedDoc?.status === 'unsupported' && fetchedDoc?.format === 'doc') ||
+                                           fetchedDoc?.status === 'cors_blocked';
+
+                    html += `
+                        <div class="flex items-center justify-between p-2 ${bgClass} border border-slate-200 rounded mb-1 transition-colors group">
+                            <div class="flex-1 min-w-0 mr-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-medium text-slate-700 truncate" title="${link.name}">${link.name}</span>
+                                    ${statusBadge}
+                                </div>
+                                <span class="text-xs text-slate-500">Page ${link.pageNum}</span>
+                            </div>
+                            <div class="flex items-center gap-1 flex-shrink-0">
+                                ${needsViewButton ? `
+                                    <button onclick="openExternalDocViewer('${link.url}', '${link.name.replace(/'/g, "\\'")}'); event.stopPropagation();"
+                                            class="px-2 py-1 ${fetchedDoc?.status === 'cors_blocked' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-amber-500 hover:bg-amber-600'} text-white rounded text-xs font-medium transition-colors flex items-center gap-1"
+                                            title="View in app using Google Docs">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        View
+                                    </button>
+                                ` : ''}
+                                <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 p-1" title="Open in new tab">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            });
+
+            // Add auto-fetch button if there are fetchable links
+            const fetchableCount = links.filter(l => l.fetchable && !fetched[l.url]).length;
+            const fetchedCount = Object.values(fetched).filter(f => f.status === 'success').length;
+
+            if (fetchableCount > 0 || fetchedCount > 0) {
+                html += `<div class="mt-3 pt-3 border-t border-slate-200">`;
+                if (fetchedCount > 0) {
+                    html += `<p class="text-xs text-green-600 mb-2">✓ ${fetchedCount} document${fetchedCount !== 1 ? 's' : ''} analyzed - content included in AI evaluation</p>`;
+                }
+                if (fetchableCount > 0) {
+                    html += `<button onclick="autoFetchLinkedDocuments(); updatePdfLinkedDocsPanel();"
+                                class="w-full px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                ${state.linkedDocuments.isFetching ? 'disabled' : ''}>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        ${state.linkedDocuments.isFetching ? 'Fetching...' : `Auto-Fetch ${fetchableCount} PDF${fetchableCount !== 1 ? 's' : ''} for AI Analysis`}
+                    </button>`;
+                }
+                html += `</div>`;
+            }
+
+            list.innerHTML = html;
         }
     }
 
@@ -2089,13 +2887,16 @@
         visualContentDetected: false,  // Whether visual content was detected in current PDF
         pdfPageImages: [],  // Base64 images of PDF pages for vision analysis
         visionAnalysisCache: {},  // Cache vision analysis results per page
+        // API error tracking (v7.19)
+        apiErrors: [],  // Track API errors during analysis
+        visionFailures: 0,  // Count of vision API failures
         // Reference Documents (v7.1)
         referenceDocuments: {
             fundingPriorities: JSON.parse(localStorage.getItem('nofa_ref_funding_priorities') || 'null'),
             guidelines: JSON.parse(localStorage.getItem('nofa_ref_guidelines') || 'null'),
             other: JSON.parse(localStorage.getItem('nofa_ref_other') || '[]')
         },
-        // Linked Documents from Application PDF (v7.15)
+        // Linked Documents from Application PDF (v7.17)
         linkedDocuments: {
             links: [],           // All hyperlinks found in the PDF [{url, pageNum, type, name}]
             fetched: {},         // Fetched document content keyed by URL {url: {text, name, status, error}}
@@ -2286,6 +3087,118 @@
         if (lastRetryAction) lastRetryAction();
     }
 
+    // Show analysis error summary modal (v7.19)
+    function showAnalysisErrorSummary(errors, total, successful) {
+        const failedCriteria = errors.map(e => e.criterion.toUpperCase()).join(', ');
+        const networkErrors = errors.filter(e => e.isNetwork);
+        const visionErrors = errors.filter(e => e.isVision);
+
+        let detailsHtml = `<div class="text-left space-y-3">`;
+        detailsHtml += `<p class="font-medium">Analysis completed with issues:</p>`;
+        detailsHtml += `<ul class="list-disc ml-4 space-y-1">`;
+        detailsHtml += `<li class="text-green-700">✓ ${successful} criteria analyzed successfully</li>`;
+        detailsHtml += `<li class="text-red-700">✗ ${errors.length} criteria failed: ${failedCriteria}</li>`;
+        detailsHtml += `</ul>`;
+
+        if (networkErrors.length > 0) {
+            detailsHtml += `<div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">`;
+            detailsHtml += `<p class="font-medium text-amber-800 flex items-center gap-2">`;
+            detailsHtml += `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+            detailsHtml += `Connection Issues Detected</p>`;
+            detailsHtml += `<p class="text-sm text-amber-700 mt-1">${networkErrors.length} API calls failed due to network/connection errors. This may indicate:</p>`;
+            detailsHtml += `<ul class="text-sm text-amber-700 list-disc ml-4 mt-1">`;
+            detailsHtml += `<li>Unstable internet connection</li>`;
+            detailsHtml += `<li>API service temporarily unavailable</li>`;
+            detailsHtml += `<li>Firewall or proxy blocking requests</li>`;
+            detailsHtml += `</ul>`;
+            detailsHtml += `</div>`;
+        }
+
+        if (visionErrors.length > 0 && state.visionEnabled) {
+            detailsHtml += `<div class="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">`;
+            detailsHtml += `<p class="font-medium text-purple-800 flex items-center gap-2">`;
+            detailsHtml += `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`;
+            detailsHtml += `Vision Analysis Issues</p>`;
+            detailsHtml += `<p class="text-sm text-purple-700 mt-1">${visionErrors.length} vision-enabled requests failed. You may want to:</p>`;
+            detailsHtml += `<ul class="text-sm text-purple-700 list-disc ml-4 mt-1">`;
+            detailsHtml += `<li>Disable vision mode in Settings and re-analyze</li>`;
+            detailsHtml += `<li>Check that your API key has vision access</li>`;
+            detailsHtml += `<li>Try again when connection is stable</li>`;
+            detailsHtml += `</ul>`;
+            detailsHtml += `</div>`;
+        }
+
+        detailsHtml += `<p class="mt-3 text-sm text-slate-600">You can re-analyze failed criteria individually or click "Auto-Analyze" again to retry all failures.</p>`;
+        detailsHtml += `</div>`;
+
+        // Create and show a custom modal
+        const modal = document.createElement('div');
+        modal.id = 'analysisErrorModal';
+        modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl">
+                <div class="p-6 border-b border-slate-200">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Analysis Partially Complete</h3>
+                            <p class="text-sm text-slate-500">Some criteria could not be analyzed</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 text-slate-700">
+                    ${detailsHtml}
+                </div>
+                <div class="p-4 border-t border-slate-200 flex justify-end gap-3">
+                    <button onclick="document.getElementById('analysisErrorModal').remove()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors">
+                        Continue Reviewing
+                    </button>
+                    <button onclick="document.getElementById('analysisErrorModal').remove(); autoAnalyzeRemaining();" class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
+                        Retry Failed Criteria
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+    }
+
+    // Update API error indicator in header (v7.19)
+    function updateApiErrorIndicator() {
+        const indicator = document.getElementById('apiErrorIndicator');
+        const text = document.getElementById('apiErrorText');
+        if (!indicator || !text) return;
+
+        const errorCount = state.apiErrors.length;
+        if (errorCount > 0) {
+            indicator.classList.remove('hidden');
+            indicator.classList.add('flex');
+            text.textContent = `${errorCount} Failed`;
+        } else {
+            indicator.classList.add('hidden');
+            indicator.classList.remove('flex');
+        }
+    }
+
+    // Show last error summary (called from header indicator) (v7.19)
+    function showLastErrorSummary() {
+        if (state.apiErrors.length === 0) {
+            showToast('info', 'No Errors', 'All API calls completed successfully.');
+            return;
+        }
+        const totalAnalyzed = CRITERIA.length;
+        const successful = totalAnalyzed - state.apiErrors.length;
+        showAnalysisErrorSummary(state.apiErrors, totalAnalyzed, successful);
+    }
+
     // ============================================================
     // UTILITY FUNCTIONS
     // ============================================================
@@ -2380,14 +3293,18 @@
     // Global keyboard handler for modals (Escape to close)
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            // Close any open modal
+            // Close any open modal (v7.19: added external doc viewer)
+            const externalDocModal = document.getElementById('externalDocViewerModal');
             const settingsModal = document.getElementById('settingsModal');
             const pdfViewerModal = document.getElementById('pdfViewerModal');
             const evidenceModal = document.getElementById('evidenceModal');
             const counterArgModal = document.getElementById('counterArgModal');
             const commentPromptModal = document.getElementById('commentPromptModal');
 
-            if (settingsModal && !settingsModal.classList.contains('hidden')) {
+            // External doc viewer has highest z-index, close it first
+            if (externalDocModal && !externalDocModal.classList.contains('hidden')) {
+                closeExternalDocViewer();
+            } else if (settingsModal && !settingsModal.classList.contains('hidden')) {
                 hideSettings();
             } else if (pdfViewerModal && !pdfViewerModal.classList.contains('hidden')) {
                 hidePdfViewer();
@@ -2406,6 +3323,18 @@
         if (e.target === this) {
             hideSettings();
         }
+    });
+
+    // Click outside modal to close (for External Document Viewer - v7.19)
+    document.getElementById('externalDocViewerModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeExternalDocViewer();
+        }
+    });
+
+    // Attach onload handler for external doc viewer iframe (v7.19)
+    document.getElementById('externalDocFrame')?.addEventListener('load', function() {
+        onExternalDocFrameLoad();
     });
 
     // Prevent background scroll when modal is open and mouse is over modal content
@@ -2927,6 +3856,7 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
     let currentSearchTerms = []; // Store current search terms for highlighting
     let pdfViewMode = 'visual'; // 'visual' or 'text'
     let pdfZoomScale = 1.0; // Current zoom level for visual mode
+    let currentPdfRenderTask = null; // Track current PDF render task to prevent canvas conflicts (v7.19)
 
     function showPdfViewer(context, searchTerms = [], fromEvidenceModal = false, criterionId = null) {
         document.getElementById('pdfViewerContext').textContent = context;
@@ -2950,6 +3880,9 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
         // Set initial view mode and render
         setPdfViewMode(pdfViewMode);
         renderPdfPage(state.pdfViewerCurrentPage, searchTerms);
+
+        // Update linked documents panel in PDF viewer (v7.17)
+        updatePdfLinkedDocsPanel();
     }
 
     // Switch between visual and text view modes
@@ -2991,6 +3924,17 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
     async function renderVisualPdfPage(pageIndex) {
         const canvas = document.getElementById('pdfCanvas');
         const ctx = canvas.getContext('2d');
+
+        // Cancel any existing render task to prevent "Cannot use the same canvas during multiple render() operations" error (v7.19)
+        if (currentPdfRenderTask) {
+            try {
+                currentPdfRenderTask.cancel();
+                console.log('[PDF Visual] Cancelled previous render task');
+            } catch (cancelError) {
+                // Ignore cancel errors - task may have already completed
+            }
+            currentPdfRenderTask = null;
+        }
 
         // Check if PDF document is available
         if (!state.pdfDocument) {
@@ -3047,12 +3991,24 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
                 background: 'white'
             };
 
-            await page.render(renderContext).promise;
+            // Store the render task so it can be cancelled if user navigates/zooms quickly (v7.19)
+            const renderTask = page.render(renderContext);
+            currentPdfRenderTask = renderTask;
+
+            await renderTask.promise;
+
+            // Clear the task reference after successful completion
+            currentPdfRenderTask = null;
 
             console.log(`[PDF Visual] Successfully rendered page ${pageNum} (${canvas.width}x${canvas.height}) at ${Math.round(pdfZoomScale * 100)}% zoom`);
         } catch (error) {
+            // Check if this was a cancellation (not a real error) (v7.19)
+            if (error && error.name === 'RenderingCancelledException') {
+                console.log('[PDF Visual] Render was cancelled (user navigated/zoomed)');
+                return; // Don't show error for intentional cancellation
+            }
             console.error('[PDF Visual] Render error:', error);
-            showPdfLoadError(canvas, ctx, 'Unable to render page: ' + error.message);
+            showPdfLoadError(canvas, ctx, 'Unable to render page: ' + (error?.message || 'Unknown error'));
         }
     }
 
@@ -3150,34 +4106,66 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
         const pageText = state.pdfPages[pageIndex] || '';
         let displayText = pageText;
 
-        // Build search phrases and apply highlighting (same as before)
+        // Build search phrases and apply highlighting (v7.19 - improved accuracy)
         const searchPhrases = [];
-        termsToUse.forEach(term => {
-            if (term && term.length > 3) {
-                const normalizedTerm = term.replace(/\s+/g, ' ').trim();
-                if (normalizedTerm.length <= 100) searchPhrases.push(normalizedTerm);
-                const phrases = normalizedTerm.split(/[.!?]/).filter(p => p.trim().length > 15);
-                phrases.forEach(p => {
-                    const cleaned = p.trim();
-                    if (cleaned.length > 15 && cleaned.length <= 80) searchPhrases.push(cleaned);
-                    if (cleaned.length > 40) searchPhrases.push(cleaned.substring(0, 40));
-                });
-                if (normalizedTerm.length > 50) searchPhrases.push(normalizedTerm.substring(0, 50));
-                if (normalizedTerm.length > 30) searchPhrases.push(normalizedTerm.substring(0, 30));
+        console.log(`[PDF Highlight] Processing ${termsToUse.length} search terms`);
+
+        termsToUse.forEach((term, idx) => {
+            if (!term || term.length < 4) return;
+
+            const normalizedTerm = term.replace(/\s+/g, ' ').trim();
+            console.log(`[PDF Highlight] Term ${idx + 1}: "${normalizedTerm.substring(0, 50)}..." (${normalizedTerm.length} chars)`);
+
+            // Always add the full term (removed 100 char limit that was causing misses)
+            if (normalizedTerm.length >= 10) {
+                searchPhrases.push(normalizedTerm);
+            }
+
+            // Split by sentence boundaries and add meaningful phrases
+            const sentences = normalizedTerm.split(/[.!?]/).filter(p => p.trim().length > 10);
+            sentences.forEach(s => {
+                const cleaned = s.trim();
+                if (cleaned.length >= 10) searchPhrases.push(cleaned);
+            });
+
+            // Also split by commas for clause-level matching
+            const clauses = normalizedTerm.split(/[,;]/).filter(p => p.trim().length > 15);
+            clauses.forEach(c => {
+                const cleaned = c.trim();
+                if (cleaned.length >= 15 && cleaned.length <= 150) searchPhrases.push(cleaned);
+            });
+
+            // Add progressive substrings for very long excerpts (helps with partial matches)
+            if (normalizedTerm.length > 80) {
+                searchPhrases.push(normalizedTerm.substring(0, 80));
+                searchPhrases.push(normalizedTerm.substring(0, 60));
+            }
+            if (normalizedTerm.length > 40) {
+                searchPhrases.push(normalizedTerm.substring(0, 40));
             }
         });
 
+        // Remove duplicates and sort by length (longest first for better matching)
         const uniquePhrases = [...new Set(searchPhrases)].sort((a, b) => b.length - a.length);
+        console.log(`[PDF Highlight] Generated ${uniquePhrases.length} unique search phrases`);
+
+        let matchCount = 0;
         uniquePhrases.forEach(phrase => {
-            if (phrase && phrase.length > 10) {
+            if (phrase && phrase.length >= 10) {
                 const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // Allow flexible whitespace matching (PDF text often has different spacing)
                 const flexiblePattern = escaped.replace(/ /g, '\\s+');
                 try {
                     const regex = new RegExp(`(${flexiblePattern})`, 'gi');
+                    const beforeLength = displayText.length;
                     displayText = displayText.replace(regex, '<span class="highlight-text">$1</span>');
-                } catch (e) { /* skip invalid regex */ }
+                    if (displayText.length > beforeLength) matchCount++;
+                } catch (e) {
+                    console.warn(`[PDF Highlight] Invalid regex for phrase: ${phrase.substring(0, 30)}...`);
+                }
             }
         });
+        console.log(`[PDF Highlight] Applied ${matchCount} highlights`);
 
         document.getElementById('pdfTextView').innerHTML = `<div class="prose max-w-none"><div class="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">${displayText}</div></div>`;
     }
@@ -3503,12 +4491,13 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
                 await renderPdfPagesForVision(pdf);
             }
 
-            // Extract hyperlinks from the PDF (v7.15)
+            // Extract hyperlinks from the PDF (v7.17)
             updateLoadingProgress(100, 'Extracting linked documents...');
             state.linkedDocuments.links = await extractHyperlinksFromPDF(pdf);
             state.linkedDocuments.fetched = {}; // Reset fetched docs for new PDF
             updateLinkedDocsUI();
             updateLinkedDocsStatusPreview();
+            updatePdfLinkedDocsPanel();
 
             hideLoading();
 
@@ -3880,7 +4869,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
         // Build reference document context (v7.11)
         const referenceContext = buildReferenceContext();
 
-        // Build linked documents context (v7.15)
+        // Build linked documents context (v7.17)
         const linkedDocsContext = buildLinkedDocumentsContext();
 
         const systemPrompt = `You are an expert NOFA reviewer for San Mateo County Department of Housing. You are evaluating criterion: "${criterion.question}"\n\nIMPORTANT CONTEXT - NONPROFIT APPLICANTS:\nMost NOFA applicants are 501(c)(3) nonprofit organizations. When evaluating financial information, apply nonprofit-appropriate standards:\n- Nonprofits do NOT generate "income" like businesses - they secure grants, contracts, and donations\n- A budget showing expenses equal to revenue is NORMAL (spending grants as intended)\n- "Operating on reserves" can indicate HEALTHY financial management, not distress\n- Funding gaps often represent the portion being requested (why they're applying)\n- Evaluate: audit findings, funding diversity, reserve levels, and grant management track record\n- Do NOT penalize organizations for seeking grant funding or having budgets that rely on multiple funders\n\nSCORING RULE:\n${criterion.scoringRule}\n\nPROJECT INFO:\n- Applicant: ${state.projectInfo.applicant || 'Unknown'}\n- Project: ${state.projectInfo.project || 'Unknown'}\n- Amount Requested: ${formatCurrency(state.projectInfo.amountRequested)}\n- Total Cost: ${formatCurrency(state.projectInfo.totalCost)}\n- Clients Served: ${formatNumber(state.projectInfo.clientsServed)}\n- Cost Per Client: ${costPerClient ? formatCurrency(costPerClient) : 'N/A'}\n- County % of Total: ${countyPercent ? countyPercent.toFixed(1) + '%' : 'N/A'}${referenceContext}${linkedDocsContext}\n\nIMPORTANT: The application text includes BOTH the main narrative AND attachments/exhibits section. Look for evidence in attachments (financial statements, audits, organizational charts, letters of support, etc.) when evaluating criteria that reference them.${visionContext}\n\nWhen evaluating priority alignment, cross-reference the application against the County Funding Priorities document if provided. Cite specific priorities by name when relevant.\n\nProvide BOTH a recommendation AND a counter-argument.\n\nRespond with ONLY a JSON object:\n{\n    "suggestedScore": 2,\n    "reasoning": "Your detailed reasoning citing specific evidence from the application, attachments${linkedDocsContext ? ', and linked supporting documents' : ''}${state.visionEnabled ? ', including any charts, graphs, or visual elements you observed' : ''}. Reference specific County priorities if applicable.",\n    "counterArgument": "A thoughtful argument for why a different score might be appropriate",\n    "counterScore": 1,\n    "relevantExcerpts": ["Exact quote 1", "Exact quote 2"],\n    "pageReferences": [1, 3],\n    "confidence": "high|medium|low"\n}\n\nOnly suggest scores from: ${criterion.validScores.join(', ')}`;
@@ -3912,7 +4901,29 @@ Use numbers without formatting for monetary values. If not found, use null.`;
             }
             return null;
         } catch (error) {
-            showToast('error', 'AI Analysis Failed', error.message);
+            // Track API errors (v7.19)
+            const isVisionError = state.visionEnabled && state.pdfPageImages.length > 0;
+            const isNetworkError = error.message?.includes('fetch') ||
+                                   error.message?.includes('network') ||
+                                   error.message?.includes('Failed to fetch') ||
+                                   error.message?.includes('SOCKET');
+
+            state.apiErrors.push({
+                criterion: criterion.id,
+                error: error.message,
+                isVision: isVisionError,
+                isNetwork: isNetworkError,
+                timestamp: new Date().toISOString()
+            });
+
+            if (isVisionError) {
+                state.visionFailures++;
+            }
+
+            // Only show toast for non-network errors (network errors will be summarized at the end)
+            if (!isNetworkError) {
+                showToast('error', 'AI Analysis Failed', error.message);
+            }
             return null;
         }
     }
@@ -4227,6 +5238,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                 <p class="text-xs font-semibold text-slate-500 mb-1">SCORING RULE:</p>
                                 <p class="text-sm text-slate-700 whitespace-pre-line">${criterion.scoringRule}</p>
                             </div>
+                            ${buildCriterionDocumentHint(criterion.id)}
                         </div>
                         <div id="aiSuggestionArea" class="mb-6">
                             ${suggestion ? renderAISuggestion(suggestion) : `
@@ -4411,6 +5423,9 @@ Use numbers without formatting for monetary values. If not found, use null.`;
 
         state.isAutoAnalyzing = true;
         state.autoAnalyzeProgress = 0;
+        // Reset error tracking (v7.19)
+        state.apiErrors = [];
+        state.visionFailures = 0;
         const totalToAnalyze = remainingCriteria.length;
         showLoading(`Auto-Analyzing ${totalToAnalyze} Criteria`, `Starting analysis...`, true);
 
@@ -4448,10 +5463,35 @@ Use numbers without formatting for monetary values. If not found, use null.`;
             state.currentStep = 'globalReview';
             debouncedAutoSave();
             render();
-            showToast('success', 'Auto-Analysis Complete', `${totalToAnalyze} criteria analyzed. Review and adjust scores below.`);
+
+            // Show analysis summary with any errors (v7.19)
+            const successCount = totalToAnalyze - state.apiErrors.length;
+            const networkErrors = state.apiErrors.filter(e => e.isNetwork).length;
+            const visionErrors = state.visionFailures;
+
+            if (state.apiErrors.length > 0) {
+                // Show warning with details about failures
+                let errorMsg = `${successCount} of ${totalToAnalyze} criteria analyzed.`;
+                if (networkErrors > 0) {
+                    errorMsg += ` ${networkErrors} failed due to connection issues.`;
+                }
+                if (visionErrors > 0 && state.visionEnabled) {
+                    errorMsg += ` Vision analysis had ${visionErrors} failures.`;
+                }
+                showToast('warning', 'Analysis Partially Complete', errorMsg);
+
+                // Show detailed error modal
+                showAnalysisErrorSummary(state.apiErrors, totalToAnalyze, successCount);
+            } else {
+                showToast('success', 'Auto-Analysis Complete', `${totalToAnalyze} criteria analyzed. Review and adjust scores below.`);
+            }
+
+            // Update header error indicator (v7.19)
+            updateApiErrorIndicator();
         } catch (error) {
             hideLoading();
             state.isAutoAnalyzing = false;
+            updateApiErrorIndicator(); // Also update on failure (v7.19)
             showError('Auto-Analysis Failed', error.message, autoAnalyzeRemaining);
         }
     }
@@ -4459,6 +5499,9 @@ Use numbers without formatting for monetary values. If not found, use null.`;
     // Re-analyze all criteria (generates new suggestions but doesn't overwrite existing scores)
     async function reAnalyzeAll() {
         state.isAutoAnalyzing = true;
+        // Reset error tracking (v7.19)
+        state.apiErrors = [];
+        state.visionFailures = 0;
         showLoading('Re-Analyzing All Criteria', `Generating fresh AI suggestions...`, true);
 
         try {
@@ -4480,10 +5523,27 @@ Use numbers without formatting for monetary values. If not found, use null.`;
             state.currentStep = 'globalReview';
             debouncedAutoSave();
             render();
-            showToast('success', 'Re-Analysis Complete', 'Fresh AI suggestions generated. Your scores are preserved.');
+
+            // Show analysis summary with any errors (v7.19)
+            const totalToAnalyze = CRITERIA.length;
+            const successCount = totalToAnalyze - state.apiErrors.length;
+
+            if (state.apiErrors.length > 0) {
+                let errorMsg = `${successCount} of ${totalToAnalyze} criteria re-analyzed.`;
+                if (state.visionFailures > 0 && state.visionEnabled) {
+                    errorMsg += ` Vision analysis had ${state.visionFailures} failures.`;
+                }
+                showToast('warning', 'Re-Analysis Partially Complete', errorMsg);
+                showAnalysisErrorSummary(state.apiErrors, totalToAnalyze, successCount);
+            } else {
+                showToast('success', 'Re-Analysis Complete', 'Fresh AI suggestions generated. Your scores are preserved.');
+            }
+
+            updateApiErrorIndicator();
         } catch (error) {
             hideLoading();
             state.isAutoAnalyzing = false;
+            updateApiErrorIndicator();
             showError('Re-Analysis Failed', error.message, reAnalyzeAll);
         }
     }
@@ -4886,6 +5946,9 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                         </div>
                     </div>
                     ` : ''}
+
+                    <!-- Recommended Supporting Documents (v7.17) -->
+                    ${buildDocumentRecommendationsHTML(criterionId)}
                 </div>
                 <div class="p-4 border-t border-slate-200 bg-slate-50">
                     <button onclick="document.getElementById('evidenceModal').remove(); showPdfViewer('Full Document', ${JSON.stringify(suggestion.relevantExcerpts || []).replace(/"/g, '&quot;')}, true, '${criterionId}')" class="w-full px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
