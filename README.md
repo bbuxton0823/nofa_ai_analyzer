@@ -10,11 +10,11 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 
 **No installation required!** Just download and open.
 
-### [📥 Download NOFA AI Evaluator v7.13](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/latest/download/NOFA_AI_Evaluator_v7.13.html)
+### [📥 Download NOFA AI Evaluator v7.14](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/latest/download/NOFA_AI_Evaluator_v7.14.html)
 
 **How to use:**
 1. Click the download link above
-2. Open the downloaded `NOFA_AI_Evaluator_v7.13.html` file in your browser (double-click it)
+2. Open the downloaded `NOFA_AI_Evaluator_v7.14.html` file in your browser (double-click it)
 3. That's it! The tool runs entirely in your browser
 
 > 💡 **Tip**: Save the file somewhere easy to find (like your Desktop) for quick access.
@@ -41,7 +41,7 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 
 ## Quick Start
 
-1. **Open the Application**: Double-click `NOFA_AI_Evaluator_v7.13.html`
+1. **Open the Application**: Double-click `NOFA_AI_Evaluator_v7.14.html`
 2. **Load a Template**: Upload your Excel scoring template
 3. **Enter Application**: Paste or type the application text
 4. **Run Evaluation**: Click "Start Evaluation"
@@ -96,7 +96,7 @@ To pre-configure a shared API key for your team:
 
 1. Get an API Key at [console.anthropic.com](https://console.anthropic.com)
 2. Set spending limits in the Anthropic Console
-3. Open `NOFA_AI_Evaluator_v7.13.html` in a text editor
+3. Open `NOFA_AI_Evaluator_v7.14.html` in a text editor
 4. Find `SHARED_API_KEY` in the configuration
 5. Replace the empty quotes with your API key:
 
@@ -110,6 +110,7 @@ Distribute the modified file to your team.
 
 | Version | Changes |
 |---------|---------|
+| v7.14 | **PDF Zoom Scroll Fix**: Fixed issue where zoomed PDF couldn't scroll to see left edge; PDF now properly scrolls in all directions when zoomed |
 | v7.13 | **PDF Viewer Fix**: Fixed bug where Visual PDF viewer displayed pages upside-down on first load; Removed double-rotation issue in PDF rendering |
 | v7.12 | **Nonprofit-Appropriate Evaluation**: AI prompts now use nonprofit financial evaluation standards; Fiscal stability scoring updated to assess audit findings, funding diversity, and reserve levels instead of profit metrics; Leveraging criteria recognize multi-year grant relationships and contract renewals; System prompt includes nonprofit context to prevent penalizing organizations for normal grant-seeking behavior |
 | v7.11 | **Reference Documents Upload**: Upload Funding Priorities and NOFA Guidelines PDFs; Documents stored locally and persist across sessions; AI cross-references applications against actual County priorities; Cite specific priority names in scoring reasoning |
