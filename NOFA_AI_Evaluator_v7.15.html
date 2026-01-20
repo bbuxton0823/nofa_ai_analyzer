@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOFA AI Evaluator v7.14 - San Mateo County FY26-27</title>
+    <title>NOFA AI Evaluator v7.15 - San Mateo County FY26-27</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -97,7 +97,7 @@
                             </svg>
                         </div>
                         <div>
-                            <h1 class="text-2xl font-bold">NOFA AI Evaluator <span class="text-blue-300 text-lg">v7.14</span></h1>
+                            <h1 class="text-2xl font-bold">NOFA AI Evaluator <span class="text-blue-300 text-lg">v7.15</span></h1>
                             <p class="text-blue-200 text-sm">Winter FY26-27 • San Mateo County • AI-Assisted Scoring</p>
                         </div>
                     </div>
@@ -346,6 +346,25 @@
                     </div>
                     <div id="refDocsStatusPreview" class="text-xs space-y-1">
                         <!-- Status preview will be populated by updateRefDocsPreview() -->
+                    </div>
+                </div>
+
+                <!-- Linked Documents Section (v7.15) -->
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">🔗 Linked Documents</p>
+                            <p class="text-xs text-slate-500">Supporting documents linked in the application PDF</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="linkedDocsCount" class="hidden px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">0</span>
+                            <button onclick="hideSettings(); toggleLinkedDocsPanel();" class="px-3 py-1.5 text-sm border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors">
+                                View
+                            </button>
+                        </div>
+                    </div>
+                    <div id="linkedDocsStatusPreview" class="text-xs text-slate-500">
+                        Upload an application PDF to detect linked documents
                     </div>
                 </div>
 
@@ -669,6 +688,75 @@
         </div>
     </div>
 
+    <!-- Linked Documents Modal (v7.15) -->
+    <div id="linkedDocsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="linkedDocsTitle">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] shadow-2xl flex flex-col">
+            <div class="p-6 border-b border-slate-200 flex-shrink-0">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 id="linkedDocsTitle" class="text-lg font-bold text-slate-800">Linked Documents</h3>
+                            <p class="text-sm text-slate-500">Supporting documents found in the application PDF</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleLinkedDocsPanel()" class="text-slate-400 hover:text-slate-600 p-2" aria-label="Close">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6 flex-1 overflow-y-auto">
+                <!-- Fetch Button & Status -->
+                <div class="mb-4 p-4 bg-purple-50 rounded-xl">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-sm text-purple-800 font-medium">Auto-fetch retrieves linked PDF documents and includes their content in AI analysis.</p>
+                            <p id="linkedDocsFetchStatus" class="text-xs text-purple-600 mt-1"></p>
+                        </div>
+                        <button id="fetchLinkedDocsBtn" onclick="autoFetchLinkedDocuments()" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                            Auto-Fetch Documents
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Linked Documents List -->
+                <div id="linkedDocsPanel" class="mb-4">
+                    <h4 class="font-semibold text-slate-700 mb-3">Found Hyperlinks</h4>
+                    <div id="linkedDocsList" class="space-y-2 max-h-[40vh] overflow-y-auto">
+                        <p class="text-sm text-slate-500 italic">Upload an application PDF to see linked documents.</p>
+                    </div>
+                </div>
+
+                <!-- How It Works -->
+                <div class="bg-blue-50 rounded-xl p-4">
+                    <h4 class="font-semibold text-blue-800 mb-2">💡 How Linked Documents Work</h4>
+                    <ul class="text-sm text-blue-700 space-y-1 list-disc list-inside">
+                        <li><strong>Auto-Detection:</strong> Hyperlinks are extracted when you upload an application PDF</li>
+                        <li><strong>Auto-Fetch:</strong> Click the button to automatically retrieve and analyze linked PDFs</li>
+                        <li><strong>AI Integration:</strong> Fetched content (audits, budgets, exhibits) is included in scoring analysis</li>
+                        <li><strong>Manual Review:</strong> Click the link icon to open any document in a new tab</li>
+                        <li>Documents that couldn't be fetched (CORS, etc.) can still be reviewed manually</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-200 bg-slate-50 flex-shrink-0">
+                <div class="flex justify-end">
+                    <button onclick="toggleLinkedDocsPanel()" class="px-6 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
     // ============================================================
     // CONFIGURATION & CONSTANTS
@@ -821,6 +909,435 @@
         const previewText = doc.text.substring(0, 5000) + (doc.text.length > 5000 ? '\n\n... [Content truncated for preview]' : '');
 
         alert(`📄 ${doc.name}\n\nPages: ${doc.pageCount}\nCharacters: ${doc.charCount.toLocaleString()}${doc.truncated ? ' (truncated)' : ''}\n\n--- Content Preview ---\n${previewText.substring(0, 2000)}`);
+    }
+
+    // ============================================================
+    // LINKED DOCUMENTS EXTRACTION & FETCHING (v7.15)
+    // ============================================================
+
+    // Extract hyperlinks from a PDF document
+    async function extractHyperlinksFromPDF(pdf) {
+        const links = [];
+        const seenUrls = new Set();
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            try {
+                const page = await pdf.getPage(pageNum);
+                const annotations = await page.getAnnotations();
+
+                for (const annot of annotations) {
+                    if (annot.subtype === 'Link' && annot.url) {
+                        let url = annot.url;
+
+                        // Skip javascript: links and already seen URLs
+                        if (url.startsWith('javascript:')) {
+                            // Extract actual URL from javascript:myOpen() calls
+                            const match = url.match(/myOpen\(['"]([^'"]+)['"]/);
+                            if (match) url = match[1];
+                            else continue;
+                        }
+
+                        if (seenUrls.has(url)) continue;
+                        seenUrls.add(url);
+
+                        // Categorize the link
+                        const linkInfo = categorizeLink(url);
+                        links.push({
+                            url: url,
+                            pageNum: pageNum,
+                            type: linkInfo.type,
+                            name: linkInfo.name,
+                            fetchable: linkInfo.fetchable
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn(`[Linked Docs] Error extracting links from page ${pageNum}:`, err);
+            }
+        }
+
+        console.log(`[Linked Docs] Found ${links.length} unique hyperlinks in PDF`);
+        return links;
+    }
+
+    // Categorize a link based on its URL
+    function categorizeLink(url) {
+        const lowerUrl = url.toLowerCase();
+        const fileName = url.split('/').pop().split('?')[0];
+
+        // Determine document type
+        let type = 'other';
+        let fetchable = false;
+
+        if (lowerUrl.includes('audit') || lowerUrl.includes('financial_statement')) {
+            type = 'audit';
+            fetchable = true;
+        } else if (lowerUrl.includes('budget')) {
+            type = 'budget';
+            fetchable = true;
+        } else if (lowerUrl.includes('board') && (lowerUrl.includes('resolution') || lowerUrl.includes('roster'))) {
+            type = 'board';
+            fetchable = true;
+        } else if (lowerUrl.includes('exhibit') || lowerUrl.includes('attestation')) {
+            type = 'exhibit';
+            fetchable = true;
+        } else if (lowerUrl.includes('irs') || lowerUrl.includes('non_profit') || lowerUrl.includes('nonprofit')) {
+            type = 'nonprofit-status';
+            fetchable = true;
+        } else if (lowerUrl.includes('organization') && lowerUrl.includes('chart')) {
+            type = 'org-chart';
+            fetchable = true;
+        } else if (lowerUrl.includes('by-law') || lowerUrl.includes('bylaw') || lowerUrl.includes('article')) {
+            type = 'governance';
+            fetchable = true;
+        } else if (lowerUrl.includes('conflict') && lowerUrl.includes('interest')) {
+            type = 'compliance';
+            fetchable = true;
+        } else if (lowerUrl.includes('mission')) {
+            type = 'mission';
+            fetchable = true;
+        } else if (lowerUrl.includes('nofa') || lowerUrl.includes('help')) {
+            type = 'reference';
+            fetchable = false; // Don't auto-fetch NOFA reference docs
+        } else if (fileName.endsWith('.pdf') || fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+            type = 'document';
+            fetchable = true;
+        }
+
+        // Generate friendly name from filename
+        let name = fileName
+            .replace(/[-_]/g, ' ')
+            .replace(/\.[^.]+$/, '')  // Remove extension
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        // Capitalize first letter of each word
+        name = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+        if (name.length > 50) name = name.substring(0, 47) + '...';
+        if (!name) name = 'Linked Document';
+
+        return { type, name, fetchable };
+    }
+
+    // Get type label for display
+    function getLinkTypeLabel(type) {
+        const labels = {
+            'audit': '📊 Audit/Financial',
+            'budget': '💰 Budget',
+            'board': '👥 Board Document',
+            'exhibit': '📎 Exhibit',
+            'nonprofit-status': '✅ Nonprofit Status',
+            'org-chart': '🏢 Org Chart',
+            'governance': '📜 Governance',
+            'compliance': '⚖️ Compliance',
+            'mission': '🎯 Mission',
+            'reference': '📖 Reference',
+            'document': '📄 Document',
+            'other': '🔗 Link'
+        };
+        return labels[type] || labels['other'];
+    }
+
+    // Fetch a single linked document
+    async function fetchLinkedDocument(link) {
+        const url = link.url;
+
+        // Check if already fetched
+        if (state.linkedDocuments.fetched[url]) {
+            return state.linkedDocuments.fetched[url];
+        }
+
+        try {
+            // Determine if it's a PDF or text document
+            const isPDF = url.toLowerCase().endsWith('.pdf');
+            const isDoc = url.toLowerCase().match(/\.(doc|docx)$/);
+
+            if (isPDF) {
+                // Fetch and extract PDF
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const arrayBuffer = await response.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+                let fullText = '';
+                for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) { // Limit to 20 pages
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += `\n--- Page ${i} ---\n${pageText}`;
+                }
+
+                // Truncate if needed
+                const maxChars = 50000;
+                const truncated = fullText.length > maxChars;
+                const text = truncated ? fullText.substring(0, maxChars) : fullText;
+
+                const result = {
+                    text: text,
+                    name: link.name,
+                    type: link.type,
+                    status: 'success',
+                    pageCount: pdf.numPages,
+                    charCount: text.length,
+                    truncated: truncated,
+                    fetchedAt: new Date().toISOString()
+                };
+
+                state.linkedDocuments.fetched[url] = result;
+                return result;
+
+            } else if (isDoc) {
+                // Can't easily parse .doc/.docx in browser without additional libraries
+                state.linkedDocuments.fetched[url] = {
+                    text: null,
+                    name: link.name,
+                    type: link.type,
+                    status: 'unsupported',
+                    error: 'Word documents (.doc/.docx) cannot be automatically parsed. Please review manually.',
+                    fetchedAt: new Date().toISOString()
+                };
+                return state.linkedDocuments.fetched[url];
+
+            } else {
+                // Try to fetch as text
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const text = await response.text();
+                const result = {
+                    text: text.substring(0, 50000),
+                    name: link.name,
+                    type: link.type,
+                    status: 'success',
+                    charCount: text.length,
+                    truncated: text.length > 50000,
+                    fetchedAt: new Date().toISOString()
+                };
+
+                state.linkedDocuments.fetched[url] = result;
+                return result;
+            }
+
+        } catch (error) {
+            console.warn(`[Linked Docs] Failed to fetch ${url}:`, error.message);
+            state.linkedDocuments.fetched[url] = {
+                text: null,
+                name: link.name,
+                type: link.type,
+                status: 'error',
+                error: error.message,
+                fetchedAt: new Date().toISOString()
+            };
+            return state.linkedDocuments.fetched[url];
+        }
+    }
+
+    // Auto-fetch all fetchable linked documents
+    async function autoFetchLinkedDocuments() {
+        const fetchableLinks = state.linkedDocuments.links.filter(l => l.fetchable);
+
+        if (fetchableLinks.length === 0) {
+            showToast('info', 'No Documents to Fetch', 'No fetchable supporting documents were found in the application.');
+            return;
+        }
+
+        state.linkedDocuments.isFetching = true;
+        state.linkedDocuments.fetchProgress = 0;
+        updateLinkedDocsUI();
+
+        showLoading('Fetching Supporting Documents', `Retrieving ${fetchableLinks.length} linked documents...`, true);
+
+        let fetched = 0;
+        let succeeded = 0;
+        let failed = 0;
+
+        for (const link of fetchableLinks) {
+            try {
+                updateLoadingProgress(
+                    Math.round((fetched / fetchableLinks.length) * 100),
+                    `Fetching: ${link.name}`
+                );
+
+                const result = await fetchLinkedDocument(link);
+                if (result.status === 'success') succeeded++;
+                else failed++;
+
+            } catch (err) {
+                failed++;
+            }
+
+            fetched++;
+            state.linkedDocuments.fetchProgress = Math.round((fetched / fetchableLinks.length) * 100);
+        }
+
+        state.linkedDocuments.isFetching = false;
+        hideLoading();
+        updateLinkedDocsUI();
+
+        // Clear response cache since we have new context
+        clearResponseCache();
+
+        showToast(
+            succeeded > 0 ? 'success' : 'warning',
+            'Documents Fetched',
+            `Successfully retrieved ${succeeded} of ${fetchableLinks.length} documents.${failed > 0 ? ` ${failed} failed.` : ''}`
+        );
+    }
+
+    // Build context from fetched linked documents for AI prompts
+    function buildLinkedDocumentsContext() {
+        const fetched = state.linkedDocuments.fetched;
+        const docs = Object.values(fetched).filter(d => d.status === 'success' && d.text);
+
+        if (docs.length === 0) return '';
+
+        let context = '\n\n=== LINKED SUPPORTING DOCUMENTS ===\n';
+        context += 'The following documents were linked in the application and have been retrieved:\n\n';
+
+        for (const doc of docs) {
+            context += `--- ${doc.name} (${getLinkTypeLabel(doc.type)}) ---\n`;
+            // Include up to 10000 chars per document
+            const text = doc.text.substring(0, 10000);
+            context += text;
+            if (doc.text.length > 10000) context += '\n[... content truncated ...]';
+            context += '\n\n';
+        }
+
+        return context;
+    }
+
+    // Update Linked Documents UI
+    function updateLinkedDocsUI() {
+        const panel = document.getElementById('linkedDocsPanel');
+        const count = document.getElementById('linkedDocsCount');
+        const list = document.getElementById('linkedDocsList');
+        const fetchBtn = document.getElementById('fetchLinkedDocsBtn');
+        const fetchStatus = document.getElementById('linkedDocsFetchStatus');
+
+        if (!panel) return;
+
+        const links = state.linkedDocuments.links;
+        const fetched = state.linkedDocuments.fetched;
+
+        // Update count badge
+        if (count) {
+            count.textContent = links.length;
+            count.classList.toggle('hidden', links.length === 0);
+        }
+
+        // Update list
+        if (list) {
+            if (links.length === 0) {
+                list.innerHTML = '<p class="text-sm text-slate-500 italic">No hyperlinks found in the application PDF.</p>';
+            } else {
+                list.innerHTML = links.map(link => {
+                    const fetchedDoc = fetched[link.url];
+                    let statusIcon = '';
+                    let statusClass = '';
+
+                    if (fetchedDoc) {
+                        if (fetchedDoc.status === 'success') {
+                            statusIcon = '✅';
+                            statusClass = 'bg-green-50 border-green-200';
+                        } else if (fetchedDoc.status === 'error') {
+                            statusIcon = '❌';
+                            statusClass = 'bg-red-50 border-red-200';
+                        } else if (fetchedDoc.status === 'unsupported') {
+                            statusIcon = '⚠️';
+                            statusClass = 'bg-yellow-50 border-yellow-200';
+                        }
+                    } else if (link.fetchable) {
+                        statusIcon = '⏳';
+                        statusClass = 'bg-slate-50';
+                    }
+
+                    return `
+                        <div class="p-2 border rounded ${statusClass} text-sm">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-xs">${getLinkTypeLabel(link.type)}</span>
+                                        ${statusIcon ? `<span>${statusIcon}</span>` : ''}
+                                    </div>
+                                    <p class="font-medium text-slate-700 truncate" title="${link.name}">${link.name}</p>
+                                    <p class="text-xs text-slate-500">Page ${link.pageNum}</p>
+                                    ${fetchedDoc?.status === 'success' ? `<p class="text-xs text-green-600">${fetchedDoc.charCount?.toLocaleString() || 0} chars extracted</p>` : ''}
+                                    ${fetchedDoc?.status === 'error' ? `<p class="text-xs text-red-600">${fetchedDoc.error}</p>` : ''}
+                                </div>
+                                <a href="${link.url}" target="_blank" class="text-blue-600 hover:text-blue-800 flex-shrink-0" title="Open in new tab">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Update fetch button
+        if (fetchBtn) {
+            const fetchable = links.filter(l => l.fetchable).length;
+            const alreadyFetched = Object.values(fetched).filter(f => f.status === 'success').length;
+            fetchBtn.disabled = fetchable === 0 || state.linkedDocuments.isFetching;
+            fetchBtn.textContent = state.linkedDocuments.isFetching
+                ? `Fetching... ${state.linkedDocuments.fetchProgress}%`
+                : `Auto-Fetch Documents (${fetchable})`;
+        }
+
+        // Update status
+        if (fetchStatus) {
+            const successCount = Object.values(fetched).filter(f => f.status === 'success').length;
+            if (successCount > 0) {
+                fetchStatus.textContent = `${successCount} document${successCount !== 1 ? 's' : ''} loaded for AI analysis`;
+                fetchStatus.className = 'text-xs text-green-600 mt-2';
+            } else {
+                fetchStatus.textContent = '';
+            }
+        }
+    }
+
+    // Toggle linked documents panel visibility
+    function toggleLinkedDocsPanel() {
+        const modal = document.getElementById('linkedDocsModal');
+        if (modal) {
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                updateLinkedDocsUI();
+            }
+        }
+    }
+
+    // Update linked documents status preview in settings
+    function updateLinkedDocsStatusPreview() {
+        const preview = document.getElementById('linkedDocsStatusPreview');
+        const countBadge = document.getElementById('linkedDocsCount');
+        if (!preview) return;
+
+        const links = state.linkedDocuments.links;
+        const fetchedCount = Object.values(state.linkedDocuments.fetched).filter(f => f.status === 'success').length;
+
+        if (links.length === 0) {
+            preview.innerHTML = '<span class="text-slate-500">Upload an application PDF to detect linked documents</span>';
+            if (countBadge) countBadge.classList.add('hidden');
+        } else {
+            const fetchable = links.filter(l => l.fetchable).length;
+            let status = `<span class="text-purple-600">📎 ${links.length} links found</span>`;
+            if (fetchedCount > 0) {
+                status += ` • <span class="text-green-600">✓ ${fetchedCount} fetched for AI</span>`;
+            } else if (fetchable > 0) {
+                status += ` • <span class="text-amber-600">${fetchable} can be auto-fetched</span>`;
+            }
+            preview.innerHTML = status;
+
+            if (countBadge) {
+                countBadge.textContent = links.length;
+                countBadge.classList.remove('hidden');
+            }
+        }
     }
 
     // Update reference documents UI
@@ -1577,6 +2094,13 @@
             fundingPriorities: JSON.parse(localStorage.getItem('nofa_ref_funding_priorities') || 'null'),
             guidelines: JSON.parse(localStorage.getItem('nofa_ref_guidelines') || 'null'),
             other: JSON.parse(localStorage.getItem('nofa_ref_other') || '[]')
+        },
+        // Linked Documents from Application PDF (v7.15)
+        linkedDocuments: {
+            links: [],           // All hyperlinks found in the PDF [{url, pageNum, type, name}]
+            fetched: {},         // Fetched document content keyed by URL {url: {text, name, status, error}}
+            fetchProgress: 0,    // Progress of auto-fetch (0-100)
+            isFetching: false    // Whether auto-fetch is in progress
         }
     };
 
@@ -2979,10 +3503,21 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
                 await renderPdfPagesForVision(pdf);
             }
 
+            // Extract hyperlinks from the PDF (v7.15)
+            updateLoadingProgress(100, 'Extracting linked documents...');
+            state.linkedDocuments.links = await extractHyperlinksFromPDF(pdf);
+            state.linkedDocuments.fetched = {}; // Reset fetched docs for new PDF
+            updateLinkedDocsUI();
+            updateLinkedDocsStatusPreview();
+
             hideLoading();
 
             // Build toast message
             let toastMessage = `Successfully extracted ${pdf.numPages} pages.`;
+            if (state.linkedDocuments.links.length > 0) {
+                const fetchableCount = state.linkedDocuments.links.filter(l => l.fetchable).length;
+                toastMessage += ` Found ${state.linkedDocuments.links.length} linked documents (${fetchableCount} fetchable).`;
+            }
             if (state.visionAutoEnabled) {
                 toastMessage += ' Visual content detected - Vision analysis auto-enabled.';
             } else if (state.visionEnabled) {
@@ -3342,10 +3877,13 @@ Use numbers without formatting for monetary values. If not found, use null.`;
             ? `\n\nVISION ANALYSIS: You are also provided with ${state.pdfPageImages.length} page images from the PDF. Carefully examine these images for charts, graphs, tables, organizational diagrams, financial statements, and any visual evidence that supports or contradicts the application. Reference specific visual elements in your reasoning.`
             : '';
 
-        // Build reference document context (v7.1)
+        // Build reference document context (v7.11)
         const referenceContext = buildReferenceContext();
 
-        const systemPrompt = `You are an expert NOFA reviewer for San Mateo County Department of Housing. You are evaluating criterion: "${criterion.question}"\n\nIMPORTANT CONTEXT - NONPROFIT APPLICANTS:\nMost NOFA applicants are 501(c)(3) nonprofit organizations. When evaluating financial information, apply nonprofit-appropriate standards:\n- Nonprofits do NOT generate "income" like businesses - they secure grants, contracts, and donations\n- A budget showing expenses equal to revenue is NORMAL (spending grants as intended)\n- "Operating on reserves" can indicate HEALTHY financial management, not distress\n- Funding gaps often represent the portion being requested (why they're applying)\n- Evaluate: audit findings, funding diversity, reserve levels, and grant management track record\n- Do NOT penalize organizations for seeking grant funding or having budgets that rely on multiple funders\n\nSCORING RULE:\n${criterion.scoringRule}\n\nPROJECT INFO:\n- Applicant: ${state.projectInfo.applicant || 'Unknown'}\n- Project: ${state.projectInfo.project || 'Unknown'}\n- Amount Requested: ${formatCurrency(state.projectInfo.amountRequested)}\n- Total Cost: ${formatCurrency(state.projectInfo.totalCost)}\n- Clients Served: ${formatNumber(state.projectInfo.clientsServed)}\n- Cost Per Client: ${costPerClient ? formatCurrency(costPerClient) : 'N/A'}\n- County % of Total: ${countyPercent ? countyPercent.toFixed(1) + '%' : 'N/A'}${referenceContext}\n\nIMPORTANT: The application text includes BOTH the main narrative AND attachments/exhibits section. Look for evidence in attachments (financial statements, audits, organizational charts, letters of support, etc.) when evaluating criteria that reference them.${visionContext}\n\nWhen evaluating priority alignment, cross-reference the application against the County Funding Priorities document if provided. Cite specific priorities by name when relevant.\n\nProvide BOTH a recommendation AND a counter-argument.\n\nRespond with ONLY a JSON object:\n{\n    "suggestedScore": 2,\n    "reasoning": "Your detailed reasoning citing specific evidence from the application AND attachments${state.visionEnabled ? ', including any charts, graphs, or visual elements you observed' : ''}. Reference specific County priorities if applicable.",\n    "counterArgument": "A thoughtful argument for why a different score might be appropriate",\n    "counterScore": 1,\n    "relevantExcerpts": ["Exact quote 1", "Exact quote 2"],\n    "pageReferences": [1, 3],\n    "confidence": "high|medium|low"\n}\n\nOnly suggest scores from: ${criterion.validScores.join(', ')}`;
+        // Build linked documents context (v7.15)
+        const linkedDocsContext = buildLinkedDocumentsContext();
+
+        const systemPrompt = `You are an expert NOFA reviewer for San Mateo County Department of Housing. You are evaluating criterion: "${criterion.question}"\n\nIMPORTANT CONTEXT - NONPROFIT APPLICANTS:\nMost NOFA applicants are 501(c)(3) nonprofit organizations. When evaluating financial information, apply nonprofit-appropriate standards:\n- Nonprofits do NOT generate "income" like businesses - they secure grants, contracts, and donations\n- A budget showing expenses equal to revenue is NORMAL (spending grants as intended)\n- "Operating on reserves" can indicate HEALTHY financial management, not distress\n- Funding gaps often represent the portion being requested (why they're applying)\n- Evaluate: audit findings, funding diversity, reserve levels, and grant management track record\n- Do NOT penalize organizations for seeking grant funding or having budgets that rely on multiple funders\n\nSCORING RULE:\n${criterion.scoringRule}\n\nPROJECT INFO:\n- Applicant: ${state.projectInfo.applicant || 'Unknown'}\n- Project: ${state.projectInfo.project || 'Unknown'}\n- Amount Requested: ${formatCurrency(state.projectInfo.amountRequested)}\n- Total Cost: ${formatCurrency(state.projectInfo.totalCost)}\n- Clients Served: ${formatNumber(state.projectInfo.clientsServed)}\n- Cost Per Client: ${costPerClient ? formatCurrency(costPerClient) : 'N/A'}\n- County % of Total: ${countyPercent ? countyPercent.toFixed(1) + '%' : 'N/A'}${referenceContext}${linkedDocsContext}\n\nIMPORTANT: The application text includes BOTH the main narrative AND attachments/exhibits section. Look for evidence in attachments (financial statements, audits, organizational charts, letters of support, etc.) when evaluating criteria that reference them.${visionContext}\n\nWhen evaluating priority alignment, cross-reference the application against the County Funding Priorities document if provided. Cite specific priorities by name when relevant.\n\nProvide BOTH a recommendation AND a counter-argument.\n\nRespond with ONLY a JSON object:\n{\n    "suggestedScore": 2,\n    "reasoning": "Your detailed reasoning citing specific evidence from the application, attachments${linkedDocsContext ? ', and linked supporting documents' : ''}${state.visionEnabled ? ', including any charts, graphs, or visual elements you observed' : ''}. Reference specific County priorities if applicable.",\n    "counterArgument": "A thoughtful argument for why a different score might be appropriate",\n    "counterScore": 1,\n    "relevantExcerpts": ["Exact quote 1", "Exact quote 2"],\n    "pageReferences": [1, 3],\n    "confidence": "high|medium|low"\n}\n\nOnly suggest scores from: ${criterion.validScores.join(', ')}`;
 
         try {
             let response;
