@@ -1,8 +1,11 @@
-# NOFA AI Evaluator v7.13 Release Notes
+# NOFA AI Evaluator v7.14 Release Notes
 
 ## 🎉 What's New
 
-### 🐛 Bug Fix: PDF Visual Viewer
+### 🐛 Bug Fix: PDF Zoom Scrolling (v7.14)
+Fixed an issue where the PDF viewer couldn't scroll to see the left edge of the document when zoomed in. The PDF now properly scrolls in all directions when zoomed, allowing you to view the entire document at any zoom level.
+
+### 🐛 Bug Fix: PDF Visual Viewer (v7.13)
 Fixed an issue where the Visual PDF viewer displayed pages upside-down when first opening a document. The fix removes a double-rotation problem that occurred with certain PDF files.
 
 ### Nonprofit-Appropriate Evaluation (v7.12)
@@ -42,7 +45,7 @@ This release significantly improves how the AI evaluates nonprofit organizations
 
 **No installation required!** Just download and open.
 
-1. Download `NOFA_AI_Evaluator_v7.13.html` from the **Assets** section below
+1. Download `NOFA_AI_Evaluator_v7.14.html` from the **Assets** section below
 2. Save it somewhere easy to find (like your Desktop)
 3. Double-click the file to open it in your browser
 4. You're ready to start evaluating!
@@ -115,7 +118,7 @@ You need an Anthropic API key to use the AI features. Here's how to get one:
 
 If you want to distribute the evaluator with an API key already set up:
 
-1. Open `NOFA_AI_Evaluator_v7.13.html` in a **text editor** (like Notepad or VS Code)
+1. Open `NOFA_AI_Evaluator_v7.14.html` in a **text editor** (like Notepad or VS Code)
 2. Search for `SHARED_API_KEY` (around line 50)
 3. Replace the empty quotes with your API key:
    ```javascript

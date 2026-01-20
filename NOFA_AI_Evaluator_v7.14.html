@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOFA AI Evaluator v7.13 - San Mateo County FY26-27</title>
+    <title>NOFA AI Evaluator v7.14 - San Mateo County FY26-27</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -97,7 +97,7 @@
                             </svg>
                         </div>
                         <div>
-                            <h1 class="text-2xl font-bold">NOFA AI Evaluator <span class="text-blue-300 text-lg">v7.13</span></h1>
+                            <h1 class="text-2xl font-bold">NOFA AI Evaluator <span class="text-blue-300 text-lg">v7.14</span></h1>
                             <p class="text-blue-200 text-sm">Winter FY26-27 • San Mateo County • AI-Assisted Scoring</p>
                         </div>
                     </div>
@@ -451,8 +451,10 @@
                 </div>
             </div>
             <!-- Visual PDF View (canvas rendering) -->
-            <div id="pdfVisualView" class="flex-1 overflow-auto bg-slate-200 flex items-start justify-center p-4" style="min-height: 500px;">
-                <canvas id="pdfCanvas" class="shadow-lg bg-white"></canvas>
+            <div id="pdfVisualView" class="flex-1 overflow-auto bg-slate-200 p-4" style="min-height: 500px;">
+                <div id="pdfCanvasWrapper" class="flex items-start justify-center min-w-fit">
+                    <canvas id="pdfCanvas" class="shadow-lg bg-white"></canvas>
+                </div>
             </div>
             <!-- Text View (original) -->
             <div id="pdfTextView" class="pdf-viewer p-6 flex-1 overflow-y-auto hidden" role="document">
