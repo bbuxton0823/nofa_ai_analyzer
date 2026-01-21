@@ -42,11 +42,20 @@ All screens now have sticky footer navigation for easier workflow.
 - Individual include/exclude toggle on each criterion
 - More compact Notes for Export bar
 
+### Analyze Individual Criteria
+- After stopping Auto-Analyze, unanalyzed criteria show "Not analyzed yet" message
+- One-click "Analyze" button to get AI recommendation for individual criteria
+- Works in both Simple Mode and Pro Mode
+
 ### Additional Improvements
 - Cancel button for Re-Analyze All batch operations
 - Persistent "Last saved X ago" indicator in header
 - Security warning for API key localStorage storage
+
+## Bug Fixes
+- Fixed page jumping to top during Auto-Analyze (scroll position now preserved)
 - Fixed bottom navigation buttons being cut off in Review Scores
+- Fixed Supporting Documents Report modal cutoff (footer/button always visible now)
 
 ## Technical Changes
 - Added `toggleCommentExpand()` function
