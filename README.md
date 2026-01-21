@@ -47,17 +47,72 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 4. **Run Evaluation**: Click "Start Evaluation"
 5. **Review & Export**: Check scores, make adjustments, export results
 
-## Cost
+## Cost & ROI Analysis
 
-The tool itself is free. The only cost is AI API usage:
+The tool itself is free. The only cost is AI API usage (Claude Sonnet 4).
 
-| Usage | Estimated Cost |
-|-------|----------------|
-| Per Application | $0.50 - $1.50 |
-| 50 Applications | $25 - $75 |
-| 100 Applications | $50 - $150 |
+### API Cost Breakdown
 
-**ROI Example**: If reviewing one application manually takes 30 minutes and AI reduces that to 10 minutes, you save 20 minutes per application. At 100 applications, that's over 33 hours saved.
+| Component | Tokens (est.) | Cost per App |
+|-----------|---------------|--------------|
+| Main PDF Analysis | ~15,000 input | ~$0.045 |
+| 15 Criteria Evaluations | ~60,000 input + ~15,000 output | ~$0.27 |
+| Linked Documents (avg 3) | ~30,000 input | ~$0.09 |
+| Vision Analysis (if enabled) | ~5,000 input | ~$0.015 |
+| Document Classification | ~10,000 input | ~$0.03 |
+| **Total per Application** | | **$0.45 - $0.75** |
+
+*Based on Claude Sonnet 4 pricing: $3/M input tokens, $15/M output tokens*
+
+### Volume Pricing
+
+| Applications | Estimated Cost | Cost per App |
+|--------------|----------------|--------------|
+| 25 | $12 - $19 | $0.48 - $0.76 |
+| 50 | $23 - $38 | $0.46 - $0.76 |
+| 100 | $45 - $75 | $0.45 - $0.75 |
+
+### Time Savings Analysis
+
+| Task | Manual Time | With AI Tool | Time Saved |
+|------|-------------|--------------|------------|
+| Read full application | 15 min | 2 min (AI extracts key info) | 13 min |
+| Review linked documents | 20 min | 3 min (auto-fetched & analyzed) | 17 min |
+| Score 15 criteria | 25 min | 5 min (review AI suggestions) | 20 min |
+| Write justifications | 15 min | 3 min (edit AI reasoning) | 12 min |
+| Cross-reference priorities | 10 min | 0 min (automatic) | 10 min |
+| **Total per Application** | **85 min** | **13 min** | **72 min (85%)** |
+
+### ROI Calculation
+
+**Assumptions:**
+- Staff hourly rate (fully loaded): $75/hour
+- Applications per NOFA cycle: 50
+- Manual review time: 85 minutes/application
+- AI-assisted review time: 13 minutes/application
+
+| Metric | Manual Process | With AI Tool | Savings |
+|--------|----------------|--------------|---------|
+| Time per application | 85 min | 13 min | 72 min |
+| Total time (50 apps) | 70.8 hours | 10.8 hours | 60 hours |
+| Staff cost (50 apps) | $5,310 | $810 | $4,500 |
+| API cost (50 apps) | $0 | $38 | -$38 |
+| **Net Savings (50 apps)** | | | **$4,462** |
+| **ROI** | | | **11,600%** |
+
+### What You Get for $0.50-$0.75 per Application
+
+- ✅ Full PDF text extraction and analysis
+- ✅ Automatic linked document retrieval (PDFs, Word docs)
+- ✅ AI-powered document classification
+- ✅ 15 criteria scored with detailed reasoning
+- ✅ Counter-arguments for each score
+- ✅ Evidence excerpts with page references
+- ✅ Smart document recommendations per criterion
+- ✅ Vision analysis of charts/graphs (when detected)
+- ✅ Cross-reference against County funding priorities
+- ✅ Funding source recommendation (HOME/CDBG)
+- ✅ Export-ready Excel output
 
 ## You Are Always in Control
 
@@ -149,10 +204,12 @@ Distribute the modified file to your team.
 
 | Metric | Value |
 |--------|-------|
-| Lines of Code | 5,450+ |
-| Development Versions | 12 minor releases (v7.x series) |
+| Lines of Code | 7,050+ |
+| Development Versions | 19 minor releases (v7.x series) |
 | Evaluation Criteria | 15+ unique scoring areas |
 | Template Support | Flexible (any NOFA format) |
+| Supported Documents | PDF, DOCX, TXT, HTML |
+| External Libraries | PDF.js, Mammoth.js, SheetJS |
 
 ## Demo Video
 For a full walkthrough, see the [NOFA AI Analyzer Video](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/download/NOFA_AI/NOFA.AI.Video.mov) in the Releases section.
