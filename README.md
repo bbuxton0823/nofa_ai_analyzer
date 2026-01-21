@@ -165,7 +165,7 @@ Distribute the modified file to your team.
 
 | Version | Changes |
 |---------|---------|
-| v7.21 | **Sticky Headers & Improved UI**: All major screens now have sticky headers with score summaries; Sticky footer navigation on all screens; Expandable/collapsible comment sections in Global Review; Redesigned Summary page with compact 4-column score grid; Summary comments and Questions sections are collapsible |
+| v7.21 | **Keyboard Shortcuts & Undo**: Press 0-4 keys to quickly assign scores; Ctrl+Z to undo; Undo button with 50-change history; Sticky headers with score summaries on all screens; Compact Pro Mode header; Notes export controls with include/exclude toggles; Cancel button for batch operations; "Last saved" indicator |
 | v7.20 | **Counter-Arguments**: AI now generates counter-arguments for each score to help reviewers consider alternative perspectives |
 | v7.19 | **Word Document Support**: Added Mammoth.js library to parse .docx files directly in browser; Auto-fetch now extracts text from Word documents for AI analysis; Legacy .doc files show helpful message to convert to .docx or PDF; Better status indicators for unsupported file formats |
 | v7.18 | **AI-Powered Document Classification**: Documents are now automatically classified by content analysis, not just filename; AI reads document text and categorizes it (audit, budget, board docs, etc.) even when naming conventions vary; Purple "🤖 AI Classified" badge shows when a document was intelligently categorized; Works globally across different document naming styles and formats |
