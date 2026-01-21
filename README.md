@@ -212,7 +212,7 @@ Distribute the modified file to your team.
 | External Libraries | PDF.js, Mammoth.js, SheetJS |
 
 ## Demo Video
-For a full walkthrough, see the [NOFA AI Analyzer Video](sha256:d815ad9e0376e245f4282ca904cf5312f78c1cb7043d3becfb9df4d5a9e3a050) in the Releases section.
+For a full walkthrough, see the [NOFA AI Analyzer Video](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/download/v7.19/NOFA.AI.Video.mov) in the Releases section.
 
 ## License
 
