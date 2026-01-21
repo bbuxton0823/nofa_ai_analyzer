@@ -23,6 +23,31 @@ All screens now have sticky footer navigation for easier workflow.
 - Summary comments are expandable/collapsible
 - Questions section uses collapsible details element
 
+### Keyboard Shortcuts
+- **0-4 keys**: Quickly assign scores while reviewing criteria
+- **Ctrl+Z**: Undo last change
+
+### Undo Functionality
+- Undo button available in the header
+- Tracks last 50 changes with full history stack
+- Works across all score and comment changes
+
+### Compact Pro Mode Header
+- Purple header now more compact with all 5 section scores in single row
+- Reduced padding and font sizes for better screen utilization
+- Notes textarea always visible with min-height 100px
+
+### Notes Export Controls
+- Global "Include All" / "Exclude All" toggles for notes
+- Individual include/exclude toggle on each criterion
+- More compact Notes for Export bar
+
+### Additional Improvements
+- Cancel button for Re-Analyze All batch operations
+- Persistent "Last saved X ago" indicator in header
+- Security warning for API key localStorage storage
+- Fixed bottom navigation buttons being cut off in Review Scores
+
 ## Technical Changes
 - Added `toggleCommentExpand()` function
 - Added `toggleSummaryExpand()` function
