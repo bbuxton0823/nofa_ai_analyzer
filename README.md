@@ -10,11 +10,11 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 
 **No installation required!** Just download and open.
 
-### [📥 Download NOFA AI Evaluator v7.19](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/latest/download/NOFA_AI_Evaluator_v7.19.html)
+### [📥 Download NOFA AI Evaluator v7.21](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/latest/download/NOFA_AI_Evaluator_v7.21.html)
 
 **How to use:**
 1. Click the download link above
-2. Open the downloaded `NOFA_AI_Evaluator_v7.19.html` file in your browser (double-click it)
+2. Open the downloaded `NOFA_AI_Evaluator_v7.21.html` file in your browser (double-click it)
 3. That's it! The tool runs entirely in your browser
 
 > 💡 **Tip**: Save the file somewhere easy to find (like your Desktop) for quick access.
@@ -41,7 +41,7 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 
 ## Quick Start
 
-1. **Open the Application**: Double-click `NOFA_AI_Evaluator_v7.19.html`
+1. **Open the Application**: Double-click `NOFA_AI_Evaluator_v7.21.html`
 2. **Load a Template**: Upload your Excel scoring template
 3. **Enter Application**: Paste or type the application text
 4. **Run Evaluation**: Click "Start Evaluation"
@@ -151,7 +151,7 @@ To pre-configure a shared API key for your team:
 
 1. Get an API Key at [console.anthropic.com](https://console.anthropic.com)
 2. Set spending limits in the Anthropic Console
-3. Open `NOFA_AI_Evaluator_v7.19.html` in a text editor
+3. Open `NOFA_AI_Evaluator_v7.21.html` in a text editor
 4. Find `SHARED_API_KEY` in the configuration
 5. Replace the empty quotes with your API key:
 
@@ -165,6 +165,8 @@ Distribute the modified file to your team.
 
 | Version | Changes |
 |---------|---------|
+| v7.21 | **Sticky Headers & Improved UI**: All major screens now have sticky headers with score summaries; Sticky footer navigation on all screens; Expandable/collapsible comment sections in Global Review; Redesigned Summary page with compact 4-column score grid; Summary comments and Questions sections are collapsible |
+| v7.20 | **Counter-Arguments**: AI now generates counter-arguments for each score to help reviewers consider alternative perspectives |
 | v7.19 | **Word Document Support**: Added Mammoth.js library to parse .docx files directly in browser; Auto-fetch now extracts text from Word documents for AI analysis; Legacy .doc files show helpful message to convert to .docx or PDF; Better status indicators for unsupported file formats |
 | v7.18 | **AI-Powered Document Classification**: Documents are now automatically classified by content analysis, not just filename; AI reads document text and categorizes it (audit, budget, board docs, etc.) even when naming conventions vary; Purple "🤖 AI Classified" badge shows when a document was intelligently categorized; Works globally across different document naming styles and formats |
 | v7.17 | **Smart Document Recommendations**: Each evaluation criterion now shows which supporting documents are relevant; Hints like "⭐ Review: Audit/Financial, Budget" guide reviewers to the right documents; Click to see all related documents with explanations of why they matter for scoring; Priority indicators highlight must-review documents |
@@ -204,15 +206,15 @@ Distribute the modified file to your team.
 
 | Metric | Value |
 |--------|-------|
-| Lines of Code | 7,050+ |
-| Development Versions | 19 minor releases (v7.x series) |
+| Lines of Code | 8,500+ |
+| Development Versions | 21 minor releases (v7.x series) |
 | Evaluation Criteria | 15+ unique scoring areas |
 | Template Support | Flexible (any NOFA format) |
 | Supported Documents | PDF, DOCX, TXT, HTML |
 | External Libraries | PDF.js, Mammoth.js, SheetJS |
 
 ## Demo Video
-For a full walkthrough, see the [NOFA AI Analyzer Video](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/download/v7.19/NOFA.AI.Video.mov) in the Releases section.
+For a full walkthrough, see the [NOFA AI Analyzer Video](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/download/v7.21/NOFA.AI.Video.mov) in the Releases section.
 
 ## License
 
