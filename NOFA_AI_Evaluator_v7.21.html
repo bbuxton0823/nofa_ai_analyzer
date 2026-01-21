@@ -1999,14 +1999,16 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
                 </div>
 
                 <!-- Footer -->
-                <div class="px-6 py-4 bg-slate-50 border-t flex items-center justify-between">
-                    <div class="text-xs text-slate-500">
-                        💡 CORS-blocked documents can be viewed using the View button in the Linked Documents panel.
+                <div class="px-6 py-4 bg-slate-50 border-t">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div class="text-xs text-slate-500 text-center sm:text-left">
+                            💡 CORS-blocked documents can be viewed using the View button in the Linked Documents panel.
+                        </div>
+                        <button onclick="this.closest('#missingDocsModal').remove()"
+                                class="px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 font-medium flex-shrink-0 w-full sm:w-auto">
+                            Got It
+                        </button>
                     </div>
-                    <button onclick="this.closest('#missingDocsModal').remove()"
-                            class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 font-medium">
-                        Got It
-                    </button>
                 </div>
             </div>
         `;
@@ -3129,6 +3131,7 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
         projectInfo: {},
         scores: {},
         comments: {},
+        notesIncluded: {}, // Track which criteria notes should be included in export
         aiSuggestions: {},
         recommendation: {},
         currentStep: 'upload',
@@ -7582,54 +7585,75 @@ Use numbers without formatting for monetary values. If not found, use null.`;
 
         container.innerHTML = `
             <div class="fade-in flex flex-col" style="height: calc(100vh - 180px);">
-                <!-- STICKY HEADER - Score Summary & Recommendation (v7.21) -->
-                <div class="flex-shrink-0 bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 text-white rounded-2xl p-4 mb-4 shadow-xl">
-                    <div class="flex items-center justify-between flex-wrap gap-3">
-                        <div class="flex items-center gap-4">
-                            <div>
-                                <h2 class="text-xl font-bold">${simpleMode ? 'Review Scores' : 'Global Review'}</h2>
-                                <p class="text-purple-200 text-sm">${simpleMode ? 'Review and adjust scores before finalizing.' : 'Adjust scores to see impact on recommendation.'}</p>
-                            </div>
+                <!-- STICKY HEADER - Score Summary & Recommendation (v7.21 - Compact) -->
+                <div class="flex-shrink-0 bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 text-white rounded-xl ${simpleMode ? 'p-3' : 'px-4 py-2'} mb-3 shadow-lg">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div class="flex items-center gap-2">
+                            <h2 class="${simpleMode ? 'text-lg' : 'text-base'} font-bold">${simpleMode ? 'Review Scores' : 'Global Review'}</h2>
+                            ${!simpleMode ? `<span class="text-purple-300 text-xs hidden sm:inline">• Adjust scores to see impact</span>` : ''}
                         </div>
-                        <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-3">
                             <!-- Funding Recommendation (compact) -->
-                            <div class="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-                                <svg class="w-5 h-5 ${impact.fundingClass === 'text-green-600' ? 'text-green-300' : impact.fundingClass === 'text-amber-600' ? 'text-amber-300' : impact.fundingClass === 'text-red-600' ? 'text-red-300' : 'text-blue-300'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex items-center gap-1.5 bg-white/10 rounded-md px-2 py-1">
+                                <svg class="w-3.5 h-3.5 ${impact.fundingClass === 'text-green-600' ? 'text-green-300' : impact.fundingClass === 'text-amber-600' ? 'text-amber-300' : impact.fundingClass === 'text-red-600' ? 'text-red-300' : 'text-blue-300'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
-                                <span class="font-medium text-sm">${impact.fundingRecommendation}</span>
+                                <span class="font-medium text-xs">${impact.fundingRecommendation}</span>
                             </div>
                             <!-- Score Display -->
                             <div class="text-right">
-                                <div class="text-3xl font-bold">${impact.totalScore} / ${impact.maxScore}</div>
-                                <div class="text-purple-200 text-sm">${impact.percentage}% score</div>
+                                <div class="${simpleMode ? 'text-2xl' : 'text-xl'} font-bold leading-tight">${impact.totalScore} / ${impact.maxScore}</div>
+                                <div class="text-purple-200 text-[10px]">${impact.percentage}% score</div>
                             </div>
                         </div>
                     </div>
 
                     ${!simpleMode && impact.changes.length > 0 ? `
-                        <div class="mt-3 bg-amber-500/20 rounded-lg px-3 py-2">
-                            <p class="text-amber-200 text-xs">
+                        <div class="mt-1.5 bg-amber-500/20 rounded-md px-2 py-1">
+                            <p class="text-amber-200 text-[10px]">
                                 <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                 Changed ${impact.changes.length} score(s): ${impact.changes.map(ch => `${ch.criterion.id.toUpperCase()}`).join(', ')}
                             </p>
                         </div>
                     ` : ''}
 
-                    <!-- Quick Stats Row (compact) -->
-                    <div class="grid grid-cols-4 gap-2 mt-3">
+                    <!-- Quick Stats Row (compact, single row) - Hidden in Simple Mode for more space -->
+                    ${simpleMode ? '' : `
+                    <div class="flex gap-1.5 mt-2">
                         ${sections.map(s => {
                             const sectionCriteria = CRITERIA.filter(c => c.section === s);
                             const sectionScore = sectionCriteria.reduce((a, c) => a + (state.scores[c.id] || 0), 0);
                             const sectionMax = sectionCriteria.reduce((a, c) => a + c.validScores[c.validScores.length - 1], 0);
                             const sectionPct = Math.round((sectionScore / sectionMax) * 100);
                             return `
-                                <div class="bg-white/10 rounded-lg px-3 py-2 text-center">
-                                    <p class="text-xs text-purple-200 truncate">${sectionCriteria[0].sectionTitle}</p>
-                                    <p class="text-lg font-bold ${sectionPct >= 70 ? 'text-green-300' : sectionPct >= 50 ? 'text-amber-300' : 'text-red-300'}">${sectionScore}/${sectionMax}</p>
+                                <div class="flex-1 bg-white/10 rounded-md px-2 py-1 text-center min-w-0">
+                                    <p class="text-[10px] text-purple-200 truncate">${sectionCriteria[0].sectionTitle}</p>
+                                    <p class="text-sm font-bold ${sectionPct >= 70 ? 'text-green-300' : sectionPct >= 50 ? 'text-amber-300' : 'text-red-300'}">${sectionScore}/${sectionMax}</p>
                                 </div>
                             `;
                         }).join('')}
+                    </div>
+                    `}
+                </div>
+
+                <!-- Global Notes Include/Exclude Toggle (v7.21 - Compact) -->
+                <div class="flex-shrink-0 mb-2 flex items-center justify-between bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5">
+                    <div class="flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        <span class="text-xs font-medium text-slate-600">Notes for Export</span>
+                        <span class="text-[10px] text-slate-400">(${Object.values(state.notesIncluded).filter(v => v === false).length} excluded)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="toggleAllNotesIncluded(true)"
+                            class="text-[11px] px-2 py-1 rounded-md transition-all bg-green-100 text-green-700 hover:bg-green-200 font-medium">
+                            Include All
+                        </button>
+                        <button onclick="toggleAllNotesIncluded(false)"
+                            class="text-[11px] px-2 py-1 rounded-md transition-all bg-slate-100 text-slate-500 hover:bg-slate-200 font-medium">
+                            Exclude All
+                        </button>
                     </div>
                 </div>
 
@@ -7644,54 +7668,67 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                         const hasChanged = originalScore !== undefined && currentScore !== originalScore;
                         const currentComment = state.comments[c.id] || '';
 
-                        // Simple Mode: Cleaner card without counter-arguments (v7.21)
+                        // Simple Mode: Cleaner card with better readability (v7.21)
+                        const notesIncluded = state.notesIncluded[c.id] !== false; // Default to true
                         if (simpleMode) {
                             return `
                                 <div class="global-review-card bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
-                                        <div class="flex items-center gap-3">
-                                            <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold">${c.id.toUpperCase()}</span>
-                                            <p class="font-medium text-slate-800 text-sm">${c.question.substring(0, 50)}${c.question.length > 50 ? '...' : ''}</p>
+                                    <!-- Compact Header -->
+                                    <div class="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-200">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-7 h-7 bg-blue-600 text-white rounded-lg flex items-center justify-center text-xs font-bold">${c.id.toUpperCase()}</span>
+                                            <p class="font-medium text-slate-800 text-sm">${c.question.substring(0, 60)}${c.question.length > 60 ? '...' : ''}</p>
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <span class="text-lg font-bold ${currentScore >= c.validScores[c.validScores.length - 1] * 0.7 ? 'text-green-600' : currentScore >= c.validScores[c.validScores.length - 1] * 0.4 ? 'text-amber-600' : 'text-red-600'}">${currentScore}/${c.validScores[c.validScores.length - 1]}</span>
                                         </div>
                                     </div>
                                     <div class="p-4">
-                                        <div class="flex items-center gap-3">
+                                        <!-- Score Selection Row -->
+                                        <div class="flex items-start gap-4 mb-3">
                                             <!-- Score Buttons -->
-                                            <div class="flex gap-1">
+                                            <div class="flex gap-1 flex-shrink-0">
                                                 ${c.validScores.map(score => `
                                                     <button onclick="updateGlobalScore('${c.id}', ${score})"
-                                                        class="w-10 h-10 rounded-lg font-bold text-sm border-2 transition-all ${currentScore === score ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}">
+                                                        class="w-9 h-9 rounded-lg font-bold text-sm border-2 transition-all ${currentScore === score ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}">
                                                         ${score}
                                                     </button>
                                                 `).join('')}
                                             </div>
-                                            <!-- AI Suggestion (compact) -->
+                                            <!-- AI Suggestion Badge -->
                                             ${suggestion ? `
-                                                <div class="flex-1 text-xs text-slate-600">
-                                                    AI suggests <span class="font-semibold text-green-700">${suggestion.suggestedScore}</span>: ${suggestion.reasoning?.substring(0, 80)}...
+                                                <div class="flex items-center gap-1 text-xs bg-green-50 text-green-700 px-2 py-1 rounded-lg">
+                                                    <span class="font-semibold">AI: ${suggestion.suggestedScore}</span>
                                                 </div>
                                             ` : ''}
                                         </div>
-                                        <!-- Expandable Comment Section -->
-                                        <div class="mt-3">
-                                            <button onclick="toggleCommentExpand('${c.id}')"
-                                                class="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-700 transition-colors mb-2">
-                                                <svg id="comment-chevron-${c.id}" class="w-4 h-4 transition-transform ${currentComment ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                                </svg>
-                                                <span>${currentComment ? 'Edit notes' : 'Add notes'}</span>
-                                                ${currentComment ? '<span class="w-2 h-2 bg-blue-500 rounded-full"></span>' : ''}
-                                            </button>
-                                            <div id="comment-area-${c.id}" class="${currentComment ? '' : 'hidden'}">
-                                                <textarea id="comment-textarea-${c.id}"
-                                                    onchange="updateGlobalComment('${c.id}', this.value)"
-                                                    rows="3"
-                                                    class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 resize-y min-h-[60px]"
-                                                    placeholder="Add notes about your scoring decision...">${currentComment}</textarea>
+
+                                        <!-- AI Reasoning - Always Visible & Readable -->
+                                        ${suggestion && suggestion.reasoning ? `
+                                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-3">
+                                                <p class="text-sm text-slate-700 leading-relaxed">${suggestion.reasoning}</p>
                                             </div>
+                                        ` : ''}
+
+                                        <!-- Notes Section with Include Toggle -->
+                                        <div class="border-t border-slate-100 pt-3">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <label class="flex items-center gap-2 text-xs font-medium text-slate-600">
+                                                    Your Notes ${currentComment ? '<span class="text-blue-500">•</span>' : ''}
+                                                </label>
+                                                <button onclick="toggleNotesIncluded('${c.id}')"
+                                                    class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-all ${notesIncluded ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
+                                                    <span class="w-3 h-3 rounded-full border-2 flex items-center justify-center ${notesIncluded ? 'border-green-500 bg-green-500' : 'border-slate-400'}">
+                                                        ${notesIncluded ? '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>' : ''}
+                                                    </span>
+                                                    ${notesIncluded ? 'Include' : 'Exclude'}
+                                                </button>
+                                            </div>
+                                            <textarea id="comment-textarea-${c.id}"
+                                                onchange="updateGlobalComment('${c.id}', this.value)"
+                                                rows="3"
+                                                class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 resize-y transition-all ${notesIncluded ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 opacity-60'}"
+                                                placeholder="Add your notes about this criterion...">${currentComment}</textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -7769,23 +7806,25 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                                     ` : ''}
                                                 </div>
                                             ` : ''}
-                                            <!-- Expandable Comment Section (Pro Mode) -->
+                                            <!-- Notes Section with Include Toggle (Pro Mode v7.21 - Always Visible) -->
                                             <div>
-                                                <button onclick="toggleCommentExpand('pro-${c.id}')"
-                                                    class="flex items-center gap-2 text-xs ${!currentComment.trim() ? 'text-red-500' : 'text-slate-500'} hover:text-slate-700 transition-colors mb-2">
-                                                    <svg id="comment-chevron-pro-${c.id}" class="w-4 h-4 transition-transform ${currentComment ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                                    </svg>
-                                                    <span class="font-medium">YOUR COMMENT <span class="text-red-500">*</span></span>
-                                                    ${!currentComment.trim() ? '<span class="text-red-500">(Required)</span>' : '<span class="w-2 h-2 bg-green-500 rounded-full"></span>'}
-                                                </button>
-                                                <div id="comment-area-pro-${c.id}" class="${currentComment ? '' : 'hidden'}">
-                                                    <textarea id="comment-textarea-pro-${c.id}"
-                                                        onchange="updateGlobalComment('${c.id}', this.value)"
-                                                        rows="3"
-                                                        class="w-full px-3 py-2 text-sm border ${!currentComment.trim() ? 'border-red-300 bg-red-50' : 'border-slate-200'} rounded-lg focus:ring-2 focus:ring-blue-500 resize-y min-h-[60px]"
-                                                        placeholder="Required: Explain your reasoning for this score...">${currentComment}</textarea>
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <label class="flex items-center gap-2 text-xs font-medium ${!currentComment.trim() ? 'text-red-500' : 'text-slate-600'}">
+                                                        YOUR NOTES ${!currentComment.trim() ? '<span class="text-red-500">*</span>' : '<span class="w-2 h-2 bg-green-500 rounded-full"></span>'}
+                                                    </label>
+                                                    <button onclick="toggleNotesIncluded('${c.id}')"
+                                                        class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-all ${notesIncluded ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
+                                                        <span class="w-3 h-3 rounded-full border-2 flex items-center justify-center ${notesIncluded ? 'border-green-500 bg-green-500' : 'border-slate-400'}">
+                                                            ${notesIncluded ? '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>' : ''}
+                                                        </span>
+                                                        ${notesIncluded ? 'Include' : 'Exclude'}
+                                                    </button>
                                                 </div>
+                                                <textarea id="comment-textarea-pro-${c.id}"
+                                                    onchange="updateGlobalComment('${c.id}', this.value)"
+                                                    rows="4"
+                                                    class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 resize-y min-h-[100px] transition-all ${!currentComment.trim() ? 'border-red-300 bg-red-50' : notesIncluded ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 opacity-60'}"
+                                                    placeholder="Add your notes explaining this score...">${currentComment}</textarea>
                                             </div>
                                         </div>
 
@@ -7839,6 +7878,24 @@ Use numbers without formatting for monetary values. If not found, use null.`;
     function updateGlobalComment(criterionId, comment) {
         state.comments[criterionId] = comment;
         debouncedAutoSave();
+    }
+
+    // Toggle whether notes for a criterion should be included in export (v7.21)
+    function toggleNotesIncluded(criterionId) {
+        // Default is true (included), toggle to opposite
+        const currentValue = state.notesIncluded[criterionId] !== false;
+        state.notesIncluded[criterionId] = !currentValue;
+        debouncedAutoSave();
+        render();
+    }
+
+    // Toggle all notes included/excluded at once (v7.21)
+    function toggleAllNotesIncluded(includeAll) {
+        CRITERIA.forEach(c => {
+            state.notesIncluded[c.id] = includeAll;
+        });
+        debouncedAutoSave();
+        render();
     }
 
     function toggleCommentExpand(criterionId) {
@@ -8304,26 +8361,40 @@ Use numbers without formatting for monetary values. If not found, use null.`;
 
                         <div>
                             <div class="flex items-center justify-between mb-2">
-                                <label class="block text-sm font-medium text-slate-700" for="summaryComments">Summary Comments *</label>
+                                <label class="block text-sm font-medium text-slate-700">Summary Comments *</label>
                                 <button onclick="generateAISummary()" class="text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1 rounded-lg flex items-center gap-1 transition-colors" id="generateSummaryBtn">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                     Generate AI Summary
                                 </button>
                             </div>
-                            <textarea id="summaryComments" rows="6" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Provide your overall assessment and recommendation rationale..." aria-required="true">${state.recommendation.summaryComments || ''}</textarea>
-                            <p class="text-xs text-slate-400 mt-1">AI will synthesize all criteria scores and comments into a comprehensive recommendation.</p>
+                            <!-- Selectable Summary Container -->
+                            <div id="summaryContainer" class="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                                ${state.recommendation.summaryList && state.recommendation.summaryList.length > 0 ? '' : `
+                                    <div class="text-center text-slate-500 py-4">
+                                        <p class="text-sm">No summary generated yet. Click "Generate AI Summary" to create a summary.</p>
+                                    </div>
+                                `}
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Select and edit paragraphs to customize your summary. You can add custom paragraphs too.</p>
                         </div>
 
                         <div>
                             <div class="flex items-center justify-between mb-2">
-                                <label class="block text-sm font-medium text-slate-700" for="questions">Questions for Applicant</label>
+                                <label class="block text-sm font-medium text-slate-700">Questions for Applicant</label>
                                 <button onclick="generateAIQuestions()" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-3 py-1 rounded-lg flex items-center gap-1 transition-colors" id="generateQuestionsBtn">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     Generate AI Questions
                                 </button>
                             </div>
-                            <textarea id="questions" rows="5" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Any questions or clarifications needed from the applicant...">${state.recommendation.questions || ''}</textarea>
-                            <p class="text-xs text-slate-400 mt-1">AI will suggest clarifying questions based on weak areas and general due diligence.</p>
+                            <!-- Selectable Questions Container -->
+                            <div id="questionsContainer" class="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                                ${state.recommendation.questionsList && state.recommendation.questionsList.length > 0 ? '' : `
+                                    <div class="text-center text-slate-500 py-4">
+                                        <p class="text-sm">No questions generated yet. Click "Generate AI Questions" to create questions.</p>
+                                    </div>
+                                `}
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Select which questions to include in the evaluation. You can edit individual questions or add custom ones.</p>
                         </div>
                     </div>
                 </div>
@@ -8344,6 +8415,18 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                     </div>
                 </div>
             </div>`;
+
+        // Render selectable UI components if we have data
+        setTimeout(() => {
+            // Render summary paragraphs
+            if (state.recommendation.summaryList && state.recommendation.summaryList.length > 0) {
+                renderSelectableSummary();
+            }
+            // Render questions
+            if (state.recommendation.questionsList && state.recommendation.questionsList.length > 0) {
+                renderSelectableQuestions();
+            }
+        }, 100);
 
         // Auto-generate if empty and API key available
         if (state.apiKey && !state.recommendation.summaryComments && !state.recommendation.questions) {
@@ -8436,10 +8519,13 @@ Be direct, professional, and specific. Reference actual criteria scores. Do not 
             const data = await response.json();
             const summary = data.content[0].text;
 
-            document.getElementById('summaryComments').value = summary;
-            state.recommendation.summaryComments = summary;
+            // Parse summary into paragraphs for selectable UI
+            const parsedSummary = parseSummaryToParagraphs(summary);
+            state.recommendation.summaryList = parsedSummary;
+            state.recommendation.summaryComments = summary; // Keep raw for backward compatibility
             debouncedAutoSave();
-            showToast('success', 'Summary Generated', 'AI summary has been added. Feel free to edit.');
+            renderSelectableSummary(); // Re-render the summary UI
+            showToast('success', 'Summary Generated', 'AI summary has been generated. You can edit individual paragraphs.');
 
         } catch (error) {
             console.error('Error generating summary:', error);
@@ -8447,6 +8533,147 @@ Be direct, professional, and specific. Reference actual criteria scores. Do not 
         } finally {
             if (btn) btn.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Generate AI Summary';
         }
+    }
+
+    // Parse AI-generated summary into paragraphs for selectable UI
+    function parseSummaryToParagraphs(summaryText) {
+        if (!summaryText) return [];
+
+        // Split by double newlines (paragraphs) or single newlines followed by blank line
+        const paragraphs = summaryText.split(/\n\n+/).filter(p => p.trim());
+
+        return paragraphs.map((p, idx) => ({
+            id: `p${idx + 1}`,
+            text: p.trim(),
+            selected: true // Default to selected
+        }));
+    }
+
+    // Render selectable summary UI in Recommendation step
+    function renderSelectableSummary() {
+        const container = document.getElementById('summaryContainer');
+        if (!container) return;
+
+        const paragraphs = state.recommendation.summaryList || [];
+
+        if (paragraphs.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-slate-500 py-4">
+                    <p class="text-sm">No summary generated yet. Click "Generate AI Summary" to create a summary.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const selectedCount = paragraphs.filter(p => p.selected).length;
+
+        container.innerHTML = `
+            <div class="mb-3 flex items-center justify-between">
+                <span class="text-xs text-slate-500">${selectedCount} of ${paragraphs.length} paragraphs selected</span>
+                <div class="flex gap-2">
+                    <button onclick="toggleAllSummaryParagraphs(true)" class="text-xs px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded transition-colors">
+                        Select All
+                    </button>
+                    <button onclick="toggleAllSummaryParagraphs(false)" class="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors">
+                        Select None
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-2">
+                ${paragraphs.map((p, idx) => `
+                    <div class="flex items-start gap-3 p-3 rounded-lg border ${p.selected ? 'bg-purple-50 border-purple-200' : 'bg-slate-50 border-slate-200'} transition-all">
+                        <input type="checkbox"
+                            id="summary-para-${idx}"
+                            ${p.selected ? 'checked' : ''}
+                            onchange="toggleSummaryParagraphSelection(${idx})"
+                            class="mt-1 w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer">
+                        <div class="flex-1">
+                            <label for="summary-para-${idx}" class="flex items-center gap-2 cursor-pointer mb-1">
+                                <span class="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-0.5 rounded">¶${idx + 1}</span>
+                            </label>
+                            <textarea
+                                id="summary-para-text-${idx}"
+                                onchange="updateSummaryParagraphText(${idx}, this.value)"
+                                rows="3"
+                                class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 resize-y ${!p.selected ? 'opacity-50' : ''}"
+                                ${!p.selected ? 'disabled' : ''}
+                            >${p.text}</textarea>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-200">
+                <button onclick="addCustomSummaryParagraph()" class="text-xs px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add Custom Paragraph
+                </button>
+            </div>
+        `;
+    }
+
+    // Toggle selection of a single summary paragraph
+    function toggleSummaryParagraphSelection(idx) {
+        if (state.recommendation.summaryList && state.recommendation.summaryList[idx]) {
+            state.recommendation.summaryList[idx].selected = !state.recommendation.summaryList[idx].selected;
+            updateSummaryFromList();
+            renderSelectableSummary();
+            debouncedAutoSave();
+        }
+    }
+
+    // Toggle all summary paragraphs on/off
+    function toggleAllSummaryParagraphs(selectAll) {
+        if (state.recommendation.summaryList) {
+            state.recommendation.summaryList.forEach(p => p.selected = selectAll);
+            updateSummaryFromList();
+            renderSelectableSummary();
+            debouncedAutoSave();
+        }
+    }
+
+    // Update summary paragraph text
+    function updateSummaryParagraphText(idx, newText) {
+        if (state.recommendation.summaryList && state.recommendation.summaryList[idx]) {
+            state.recommendation.summaryList[idx].text = newText;
+            updateSummaryFromList();
+            debouncedAutoSave();
+        }
+    }
+
+    // Add a custom summary paragraph
+    function addCustomSummaryParagraph() {
+        if (!state.recommendation.summaryList) {
+            state.recommendation.summaryList = [];
+        }
+        state.recommendation.summaryList.push({
+            id: `p${state.recommendation.summaryList.length + 1}`,
+            text: '',
+            selected: true
+        });
+        updateSummaryFromList();
+        renderSelectableSummary();
+        // Focus the new paragraph's textarea
+        setTimeout(() => {
+            const newIdx = state.recommendation.summaryList.length - 1;
+            const textarea = document.getElementById(`summary-para-text-${newIdx}`);
+            if (textarea) textarea.focus();
+        }, 100);
+    }
+
+    // Update the raw summary string from the list (for backward compatibility and export)
+    function updateSummaryFromList() {
+        if (!state.recommendation.summaryList) return;
+        const selectedParagraphs = state.recommendation.summaryList
+            .filter(p => p.selected && p.text.trim())
+            .map(p => p.text)
+            .join('\n\n');
+        state.recommendation.summaryComments = selectedParagraphs;
+    }
+
+    // Get only selected summary paragraphs for display/export
+    function getSelectedSummaryParagraphs() {
+        if (!state.recommendation.summaryList) return [];
+        return state.recommendation.summaryList.filter(p => p.selected && p.text.trim());
     }
 
     // Generate AI Questions for applicant
@@ -8518,10 +8745,13 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
             const data = await response.json();
             const questions = data.content[0].text;
 
-            document.getElementById('questions').value = questions;
-            state.recommendation.questions = questions;
+            // Parse questions into array format for selectable UI
+            const parsedQuestions = parseQuestionsToArray(questions);
+            state.recommendation.questionsList = parsedQuestions;
+            state.recommendation.questions = questions; // Keep raw for backward compatibility
             debouncedAutoSave();
-            showToast('success', 'Questions Generated', 'AI questions have been added. Feel free to edit.');
+            renderSelectableQuestions(); // Re-render the questions UI
+            showToast('success', 'Questions Generated', 'AI questions have been generated. Select which ones to include.');
 
         } catch (error) {
             console.error('Error generating questions:', error);
@@ -8529,6 +8759,173 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
         } finally {
             if (btn) btn.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Generate AI Questions';
         }
+    }
+
+    // Parse AI-generated questions text into array of selectable question objects
+    function parseQuestionsToArray(questionsText) {
+        if (!questionsText) return [];
+
+        // Split by numbered lines (1., 2., 3., etc.)
+        const lines = questionsText.split(/\n/).filter(l => l.trim());
+        const questions = [];
+        let currentQuestion = '';
+
+        for (const line of lines) {
+            // Check if this line starts a new numbered question
+            const match = line.match(/^\s*(\d+)\.\s*(.+)/);
+            if (match) {
+                // Save previous question if exists
+                if (currentQuestion.trim()) {
+                    questions.push({
+                        id: `q${questions.length + 1}`,
+                        text: currentQuestion.trim(),
+                        selected: true // Default to selected
+                    });
+                }
+                currentQuestion = match[2];
+            } else {
+                // Continuation of previous question
+                currentQuestion += ' ' + line.trim();
+            }
+        }
+
+        // Don't forget the last question
+        if (currentQuestion.trim()) {
+            questions.push({
+                id: `q${questions.length + 1}`,
+                text: currentQuestion.trim(),
+                selected: true
+            });
+        }
+
+        return questions;
+    }
+
+    // Render the selectable questions UI in the Recommendation step
+    function renderSelectableQuestions() {
+        const container = document.getElementById('questionsContainer');
+        if (!container) return;
+
+        const questions = state.recommendation.questionsList || [];
+
+        if (questions.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-slate-500 py-4">
+                    <p class="text-sm">No questions generated yet. Click "Generate AI Questions" to create questions.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const selectedCount = questions.filter(q => q.selected).length;
+
+        container.innerHTML = `
+            <div class="mb-3 flex items-center justify-between">
+                <span class="text-xs text-slate-500">${selectedCount} of ${questions.length} questions selected</span>
+                <div class="flex gap-2">
+                    <button onclick="toggleAllQuestions(true)" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors">
+                        Select All
+                    </button>
+                    <button onclick="toggleAllQuestions(false)" class="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors">
+                        Select None
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-2">
+                ${questions.map((q, idx) => `
+                    <div class="flex items-start gap-3 p-3 rounded-lg border ${q.selected ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'} transition-all">
+                        <input type="checkbox"
+                            id="question-${idx}"
+                            ${q.selected ? 'checked' : ''}
+                            onchange="toggleQuestionSelection(${idx})"
+                            class="mt-1 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer">
+                        <div class="flex-1">
+                            <label for="question-${idx}" class="flex items-center gap-2 cursor-pointer">
+                                <span class="text-xs font-medium text-amber-600 bg-amber-100 px-2 py-0.5 rounded">Q${idx + 1}</span>
+                            </label>
+                            <textarea
+                                id="question-text-${idx}"
+                                onchange="updateQuestionText(${idx}, this.value)"
+                                rows="2"
+                                class="w-full mt-2 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 resize-y ${!q.selected ? 'opacity-50' : ''}"
+                                ${!q.selected ? 'disabled' : ''}
+                            >${q.text}</textarea>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-200">
+                <button onclick="addCustomQuestion()" class="text-xs px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add Custom Question
+                </button>
+            </div>
+        `;
+    }
+
+    // Toggle selection of a single question
+    function toggleQuestionSelection(idx) {
+        if (state.recommendation.questionsList && state.recommendation.questionsList[idx]) {
+            state.recommendation.questionsList[idx].selected = !state.recommendation.questionsList[idx].selected;
+            updateQuestionsFromList();
+            renderSelectableQuestions();
+            debouncedAutoSave();
+        }
+    }
+
+    // Toggle all questions on/off
+    function toggleAllQuestions(selectAll) {
+        if (state.recommendation.questionsList) {
+            state.recommendation.questionsList.forEach(q => q.selected = selectAll);
+            updateQuestionsFromList();
+            renderSelectableQuestions();
+            debouncedAutoSave();
+        }
+    }
+
+    // Update question text
+    function updateQuestionText(idx, newText) {
+        if (state.recommendation.questionsList && state.recommendation.questionsList[idx]) {
+            state.recommendation.questionsList[idx].text = newText;
+            updateQuestionsFromList();
+            debouncedAutoSave();
+        }
+    }
+
+    // Add a custom question
+    function addCustomQuestion() {
+        if (!state.recommendation.questionsList) {
+            state.recommendation.questionsList = [];
+        }
+        state.recommendation.questionsList.push({
+            id: `q${state.recommendation.questionsList.length + 1}`,
+            text: '',
+            selected: true
+        });
+        updateQuestionsFromList();
+        renderSelectableQuestions();
+        // Focus the new question's textarea
+        setTimeout(() => {
+            const newIdx = state.recommendation.questionsList.length - 1;
+            const textarea = document.getElementById(`question-text-${newIdx}`);
+            if (textarea) textarea.focus();
+        }, 100);
+    }
+
+    // Update the raw questions string from the list (for backward compatibility and export)
+    function updateQuestionsFromList() {
+        if (!state.recommendation.questionsList) return;
+        const selectedQuestions = state.recommendation.questionsList
+            .filter(q => q.selected && q.text.trim())
+            .map((q, idx) => `${idx + 1}. ${q.text}`)
+            .join('\n\n');
+        state.recommendation.questions = selectedQuestions;
+    }
+
+    // Get only selected questions for display/export
+    function getSelectedQuestions() {
+        if (!state.recommendation.questionsList) return [];
+        return state.recommendation.questionsList.filter(q => q.selected && q.text.trim());
     }
 
     // Generate both summary and questions
@@ -8550,19 +8947,24 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
 
     function handleRecommendationNext() {
         const fundingSource = document.getElementById('fundingSource').value;
-        const summaryComments = document.getElementById('summaryComments').value;
-        const questions = document.getElementById('questions').value;
 
         if (!fundingSource) {
             showToast('error', 'Required Field', 'Please select a funding source recommendation.');
             return;
         }
-        if (!summaryComments.trim()) {
-            showToast('error', 'Required Field', 'Please provide summary comments.');
+
+        // Update from selectable lists
+        updateSummaryFromList();
+        updateQuestionsFromList();
+
+        // Validate summary comments exist
+        if (!state.recommendation.summaryComments || !state.recommendation.summaryComments.trim()) {
+            showToast('error', 'Required Field', 'Please generate or add summary comments.');
             return;
         }
 
-        state.recommendation = { fundingSource, summaryComments, questions };
+        // Preserve existing lists and update funding source
+        state.recommendation.fundingSource = fundingSource;
         debouncedAutoSave();
         state.currentStep = 'summary';
         render();
@@ -8640,39 +9042,42 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
                     </div>
                 </div>
 
-                <!-- Recommendation Section - Full Width with Expandable Sections -->
+                <!-- Recommendation Section - Full Width with Selectable Sections -->
                 <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-6">
                     <h3 class="font-semibold text-slate-800 mb-4">Recommendation</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- Funding Source - Small Card -->
-                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
-                            <p class="text-xs text-blue-600 uppercase tracking-wide font-medium mb-1">Funding Source</p>
-                            <p class="text-lg font-bold text-blue-800">${state.recommendation.fundingSource || 'Not specified'}</p>
-                        </div>
 
-                        <!-- Summary - Expandable -->
-                        <div class="md:col-span-2 bg-slate-50 rounded-xl p-4 border border-slate-200">
-                            <div class="flex items-center justify-between mb-2">
-                                <p class="text-xs text-slate-600 uppercase tracking-wide font-medium">Summary Comments</p>
-                                <button onclick="toggleSummaryExpand()" class="text-xs text-blue-600 hover:text-blue-800">
-                                    <span id="summaryExpandBtn">Expand</span>
-                                </button>
-                            </div>
-                            <div id="summaryTextArea" class="text-sm text-slate-700 overflow-hidden transition-all" style="max-height: 80px;">
-                                ${state.recommendation.summaryComments || 'No comments'}
-                            </div>
-                        </div>
+                    <!-- Funding Source - Compact Card -->
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100 mb-4">
+                        <p class="text-xs text-blue-600 uppercase tracking-wide font-medium mb-1">Funding Source</p>
+                        <p class="text-lg font-bold text-blue-800">${state.recommendation.fundingSource || 'Not specified'}</p>
                     </div>
 
-                    ${state.recommendation.questions ? `
-                    <!-- Questions - Collapsible -->
-                    <details class="mt-4">
+                    <!-- Summary Comments - Selectable Paragraphs -->
+                    <details class="mb-4" open>
+                        <summary class="cursor-pointer text-sm font-medium text-slate-700 hover:text-slate-900 flex items-center gap-2">
+                            <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            Summary Comments
+                            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full ml-2">
+                                ${getSelectedSummaryParagraphs().length} paragraphs
+                            </span>
+                        </summary>
+                        <div class="mt-3" id="summarySummaryContainer">
+                            <!-- Will be populated by renderSummarySummaryParagraphs() -->
+                        </div>
+                    </details>
+
+                    ${(state.recommendation.questionsList && state.recommendation.questionsList.length > 0) || state.recommendation.questions ? `
+                    <!-- Questions - Selectable in Summary -->
+                    <details open>
                         <summary class="cursor-pointer text-sm font-medium text-slate-700 hover:text-slate-900 flex items-center gap-2">
                             <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             Questions for Applicant
+                            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full ml-2">
+                                ${getSelectedQuestions().length} selected
+                            </span>
                         </summary>
-                        <div class="mt-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                            <p class="text-sm text-amber-900 whitespace-pre-line">${state.recommendation.questions}</p>
+                        <div class="mt-3" id="summaryQuestionsContainer">
+                            <!-- Will be populated by renderSummaryQuestions() -->
                         </div>
                     </details>
                     ` : ''}
@@ -8744,13 +9149,253 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
                 </div>
             </div>`;
 
-        // Setup template upload zone on summary page
+        // Setup template upload zone and render selectable components on summary page
         setTimeout(() => {
             const summaryZone = document.getElementById('summaryTemplateDropZone');
             const summaryInput = document.getElementById('summaryTemplateInput');
             if (summaryZone && summaryInput) {
                 setupDropZone(summaryZone, summaryInput, handleTemplateUpload);
             }
+            // Render the selectable summary paragraphs
+            renderSummarySummaryParagraphs();
+            // Render the selectable questions in summary
+            renderSummaryQuestions();
+        }, 100);
+    }
+
+    // Render selectable summary paragraphs UI in the Summary step
+    function renderSummarySummaryParagraphs() {
+        const container = document.getElementById('summarySummaryContainer');
+        if (!container) return;
+
+        // Try to initialize summaryList from raw summary if not already done
+        if (!state.recommendation.summaryList && state.recommendation.summaryComments) {
+            state.recommendation.summaryList = parseSummaryToParagraphs(state.recommendation.summaryComments);
+        }
+
+        const paragraphs = state.recommendation.summaryList || [];
+
+        if (paragraphs.length === 0) {
+            container.innerHTML = `
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center text-slate-500">
+                    <p class="text-sm">No summary comments available.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const selectedCount = paragraphs.filter(p => p.selected).length;
+
+        container.innerHTML = `
+            <div class="bg-purple-50 rounded-xl border border-purple-200 p-4">
+                <div class="mb-3 flex items-center justify-between">
+                    <span class="text-xs text-purple-700 font-medium">${selectedCount} of ${paragraphs.length} paragraphs will be included</span>
+                    <div class="flex gap-2">
+                        <button onclick="toggleAllSummarySummaryParagraphs(true)" class="text-xs px-2 py-1 bg-purple-200 hover:bg-purple-300 text-purple-800 rounded transition-colors">
+                            Select All
+                        </button>
+                        <button onclick="toggleAllSummarySummaryParagraphs(false)" class="text-xs px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors">
+                            Select None
+                        </button>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    ${paragraphs.map((p, idx) => `
+                        <div class="flex items-start gap-3 p-3 rounded-lg ${p.selected ? 'bg-white border border-purple-300' : 'bg-purple-100/50 border border-transparent'} transition-all">
+                            <input type="checkbox"
+                                id="sum-summary-para-${idx}"
+                                ${p.selected ? 'checked' : ''}
+                                onchange="toggleSummarySummaryParagraphSelection(${idx})"
+                                class="mt-1 w-4 h-4 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-xs font-medium ${p.selected ? 'text-purple-700 bg-purple-200' : 'text-slate-500 bg-slate-200'} px-2 py-0.5 rounded">¶${idx + 1}</span>
+                                </div>
+                                <textarea
+                                    id="sum-summary-para-text-${idx}"
+                                    onchange="updateSummarySummaryParagraphText(${idx}, this.value)"
+                                    rows="3"
+                                    class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-purple-500 resize-y ${!p.selected ? 'border-slate-200 bg-slate-50 opacity-60' : 'border-purple-200 bg-white'}"
+                                    ${!p.selected ? 'disabled' : ''}
+                                >${p.text}</textarea>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="mt-3 pt-3 border-t border-purple-200">
+                    <button onclick="addCustomSummarySummaryParagraph()" class="text-xs px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add Custom Paragraph
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Toggle selection of a single summary paragraph in Summary step
+    function toggleSummarySummaryParagraphSelection(idx) {
+        if (state.recommendation.summaryList && state.recommendation.summaryList[idx]) {
+            state.recommendation.summaryList[idx].selected = !state.recommendation.summaryList[idx].selected;
+            updateSummaryFromList();
+            renderSummarySummaryParagraphs();
+            debouncedAutoSave();
+        }
+    }
+
+    // Toggle all summary paragraphs on/off in Summary step
+    function toggleAllSummarySummaryParagraphs(selectAll) {
+        if (state.recommendation.summaryList) {
+            state.recommendation.summaryList.forEach(p => p.selected = selectAll);
+            updateSummaryFromList();
+            renderSummarySummaryParagraphs();
+            debouncedAutoSave();
+        }
+    }
+
+    // Update summary paragraph text in Summary step
+    function updateSummarySummaryParagraphText(idx, newText) {
+        if (state.recommendation.summaryList && state.recommendation.summaryList[idx]) {
+            state.recommendation.summaryList[idx].text = newText;
+            updateSummaryFromList();
+            debouncedAutoSave();
+        }
+    }
+
+    // Add a custom summary paragraph in Summary step
+    function addCustomSummarySummaryParagraph() {
+        if (!state.recommendation.summaryList) {
+            state.recommendation.summaryList = [];
+        }
+        state.recommendation.summaryList.push({
+            id: `p${state.recommendation.summaryList.length + 1}`,
+            text: '',
+            selected: true
+        });
+        updateSummaryFromList();
+        renderSummarySummaryParagraphs();
+        // Focus the new paragraph's textarea
+        setTimeout(() => {
+            const newIdx = state.recommendation.summaryList.length - 1;
+            const textarea = document.getElementById(`sum-summary-para-text-${newIdx}`);
+            if (textarea) textarea.focus();
+        }, 100);
+    }
+
+    // Render selectable questions UI in the Summary step
+    function renderSummaryQuestions() {
+        const container = document.getElementById('summaryQuestionsContainer');
+        if (!container) return;
+
+        // Try to initialize questionsList from raw questions if not already done
+        if (!state.recommendation.questionsList && state.recommendation.questions) {
+            state.recommendation.questionsList = parseQuestionsToArray(state.recommendation.questions);
+        }
+
+        const questions = state.recommendation.questionsList || [];
+
+        if (questions.length === 0) {
+            container.innerHTML = `
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center text-slate-500">
+                    <p class="text-sm">No questions available.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const selectedCount = questions.filter(q => q.selected).length;
+
+        container.innerHTML = `
+            <div class="bg-amber-50 rounded-xl border border-amber-200 p-4">
+                <div class="mb-3 flex items-center justify-between">
+                    <span class="text-xs text-amber-700 font-medium">${selectedCount} of ${questions.length} questions will be included</span>
+                    <div class="flex gap-2">
+                        <button onclick="toggleAllQuestionsSummary(true)" class="text-xs px-2 py-1 bg-amber-200 hover:bg-amber-300 text-amber-800 rounded transition-colors">
+                            Select All
+                        </button>
+                        <button onclick="toggleAllQuestionsSummary(false)" class="text-xs px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors">
+                            Select None
+                        </button>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    ${questions.map((q, idx) => `
+                        <div class="flex items-start gap-3 p-3 rounded-lg ${q.selected ? 'bg-white border border-amber-300' : 'bg-amber-100/50 border border-transparent'} transition-all">
+                            <input type="checkbox"
+                                id="summary-question-${idx}"
+                                ${q.selected ? 'checked' : ''}
+                                onchange="toggleQuestionSelectionSummary(${idx})"
+                                class="mt-1 w-4 h-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500 cursor-pointer">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-xs font-medium ${q.selected ? 'text-amber-700 bg-amber-200' : 'text-slate-500 bg-slate-200'} px-2 py-0.5 rounded">Q${idx + 1}</span>
+                                </div>
+                                <textarea
+                                    id="summary-question-text-${idx}"
+                                    onchange="updateQuestionTextSummary(${idx}, this.value)"
+                                    rows="2"
+                                    class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-amber-500 resize-y ${!q.selected ? 'border-slate-200 bg-slate-50 opacity-60' : 'border-amber-200 bg-white'}"
+                                    ${!q.selected ? 'disabled' : ''}
+                                >${q.text}</textarea>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="mt-3 pt-3 border-t border-amber-200">
+                    <button onclick="addCustomQuestionSummary()" class="text-xs px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add Custom Question
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Toggle selection of a single question in Summary
+    function toggleQuestionSelectionSummary(idx) {
+        if (state.recommendation.questionsList && state.recommendation.questionsList[idx]) {
+            state.recommendation.questionsList[idx].selected = !state.recommendation.questionsList[idx].selected;
+            updateQuestionsFromList();
+            renderSummaryQuestions();
+            debouncedAutoSave();
+        }
+    }
+
+    // Toggle all questions on/off in Summary
+    function toggleAllQuestionsSummary(selectAll) {
+        if (state.recommendation.questionsList) {
+            state.recommendation.questionsList.forEach(q => q.selected = selectAll);
+            updateQuestionsFromList();
+            renderSummaryQuestions();
+            debouncedAutoSave();
+        }
+    }
+
+    // Update question text in Summary
+    function updateQuestionTextSummary(idx, newText) {
+        if (state.recommendation.questionsList && state.recommendation.questionsList[idx]) {
+            state.recommendation.questionsList[idx].text = newText;
+            updateQuestionsFromList();
+            debouncedAutoSave();
+        }
+    }
+
+    // Add a custom question in Summary
+    function addCustomQuestionSummary() {
+        if (!state.recommendation.questionsList) {
+            state.recommendation.questionsList = [];
+        }
+        state.recommendation.questionsList.push({
+            id: `q${state.recommendation.questionsList.length + 1}`,
+            text: '',
+            selected: true
+        });
+        updateQuestionsFromList();
+        renderSummaryQuestions();
+        // Focus the new question's textarea
+        setTimeout(() => {
+            const newIdx = state.recommendation.questionsList.length - 1;
+            const textarea = document.getElementById(`summary-question-text-${newIdx}`);
+            if (textarea) textarea.focus();
         }, 100);
     }
 
