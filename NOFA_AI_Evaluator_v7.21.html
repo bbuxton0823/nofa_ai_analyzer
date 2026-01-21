@@ -1996,9 +1996,9 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
         ` : '';
 
         modal.innerHTML = `
-            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden animate-slide-up">
-                <!-- Header -->
-                <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] flex flex-col animate-slide-up">
+                <!-- Header (flex-shrink-0 to keep fixed) -->
+                <div class="flex-shrink-0 bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4 rounded-t-xl">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <span class="text-3xl">📋</span>
@@ -2012,8 +2012,8 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
                     </div>
                 </div>
 
-                <!-- Summary -->
-                <div class="px-6 py-4 bg-slate-50 border-b">
+                <!-- Summary (flex-shrink-0 to keep fixed) -->
+                <div class="flex-shrink-0 px-6 py-4 bg-slate-50 border-b">
                     <div class="flex items-center justify-center gap-8">
                         <div class="text-center">
                             <div class="text-2xl font-bold text-green-600">${successCount}</div>
@@ -2030,8 +2030,8 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
                     </div>
                 </div>
 
-                <!-- Content -->
-                <div class="px-6 py-4 overflow-y-auto" style="max-height: 400px;">
+                <!-- Content (flex-1 with overflow-y-auto for scrolling) -->
+                <div class="flex-1 px-6 py-4 overflow-y-auto min-h-0">
                     <div class="text-sm font-medium text-amber-800 mb-3">
                         ⚠️ Documents That Need Manual Review (${missingDocs.length}):
                     </div>
@@ -2041,8 +2041,8 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
                     ${successListHtml}
                 </div>
 
-                <!-- Footer -->
-                <div class="px-6 py-4 bg-slate-50 border-t">
+                <!-- Footer (flex-shrink-0 to keep fixed at bottom) -->
+                <div class="flex-shrink-0 px-6 py-4 bg-slate-50 border-t rounded-b-xl">
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
                         <div class="text-xs text-slate-500 text-center sm:text-left">
                             💡 CORS-blocked documents can be viewed using the View button in the Linked Documents panel.
