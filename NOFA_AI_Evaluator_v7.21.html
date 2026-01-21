@@ -7971,7 +7971,21 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                                     </button>
                                                 </div>
                                             </div>
-                                        ` : ''}
+                                        ` : `
+                                            <!-- No AI suggestion yet - Show Analyze button (v7.21) -->
+                                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                                                <div class="flex items-center justify-between">
+                                                    <p class="text-sm text-amber-700">
+                                                        <span class="font-medium">Not analyzed yet</span> - Click to get AI recommendation
+                                                    </p>
+                                                    <button onclick="analyzeIndividualCriterion('${c.id}')"
+                                                        class="px-3 py-1.5 bg-[#38939B] text-white text-sm font-medium rounded-lg hover:bg-[#2a7078] transition-colors flex items-center gap-1.5">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                                                        Analyze
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        `}
 
                                         <!-- Notes Section with Include Toggle -->
                                         <div class="border-t border-slate-100 pt-3">
@@ -8084,7 +8098,21 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                                         </button>
                                                     ` : ''}
                                                 </div>
-                                            ` : ''}
+                                            ` : `
+                                                <!-- No AI suggestion yet - Show Analyze button (v7.21 Pro Mode) -->
+                                                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                                                    <div class="flex items-center justify-between">
+                                                        <p class="text-sm text-amber-700">
+                                                            <span class="font-medium">Not analyzed yet</span> - Click to get AI recommendation
+                                                        </p>
+                                                        <button onclick="analyzeIndividualCriterion('${c.id}')"
+                                                            class="px-3 py-1.5 bg-[#38939B] text-white text-sm font-medium rounded-lg hover:bg-[#2a7078] transition-colors flex items-center gap-1.5">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                                                            Analyze
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            `}
                                             <!-- Notes Section with Include Toggle (Pro Mode v7.21 - Always Visible) -->
                                             <div>
                                                 <div class="flex items-center justify-between mb-1">
@@ -8277,6 +8305,68 @@ Use numbers without formatting for monetary values. If not found, use null.`;
         } catch (error) {
             console.error('Regenerate error:', error);
             showToast('error', 'Error', error.message || 'Failed to regenerate comment');
+        } finally {
+            // Clear loading state and re-render
+            regeneratingCriteria.delete(criterionId);
+            render();
+        }
+    }
+
+    // Analyze a single criterion that hasn't been analyzed yet (v7.21)
+    async function analyzeIndividualCriterion(criterionId) {
+        const criterion = CRITERIA.find(c => c.id === criterionId);
+        if (!criterion) return;
+
+        // Prevent double-clicks while already analyzing
+        if (regeneratingCriteria.has(criterionId)) {
+            showToast('info', 'Please Wait', 'Already analyzing this criterion...');
+            return;
+        }
+
+        // Check for API key
+        if (!state.apiKey) {
+            showToast('error', 'No API Key', 'Please set your API key in settings first.');
+            showSettings();
+            return;
+        }
+
+        // Check for application text
+        if (!state.applicationText || state.applicationText.length === 0) {
+            showToast('error', 'No Document', 'Please upload an application document first.');
+            return;
+        }
+
+        // Set loading state and re-render to show spinner
+        regeneratingCriteria.add(criterionId);
+        render();
+
+        showToast('info', 'Analyzing...', `Getting AI analysis for ${criterion.id.toUpperCase()}`);
+
+        try {
+            const result = await getAISuggestion(criterion);
+
+            if (result) {
+                // Update the suggestion
+                state.aiSuggestions[criterionId] = result;
+
+                // Set the score to the AI suggestion
+                state.scores[criterionId] = result.suggestedScore;
+
+                // Auto-populate the notes field with the AI reasoning + evidence
+                let comment = result.reasoning || '';
+                if (result.relevantExcerpts?.length) {
+                    comment += '\n\nEvidence: ' + result.relevantExcerpts.map(e => '"' + e + '"').join('; ');
+                }
+                state.comments[criterionId] = comment;
+
+                debouncedAutoSave();
+                showToast('success', 'Analyzed', `AI recommendation for ${criterion.id.toUpperCase()}: Score ${result.suggestedScore}`);
+            } else {
+                showToast('error', 'Failed', 'Could not analyze criterion. Please try again.');
+            }
+        } catch (error) {
+            console.error('Analyze error:', error);
+            showToast('error', 'Error', error.message || 'Failed to analyze criterion');
         } finally {
             // Clear loading state and re-render
             regeneratingCriteria.delete(criterionId);
