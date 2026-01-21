@@ -78,8 +78,8 @@
                 </div>
                 <p id="loadingProgressText" class="text-sm text-slate-500 mt-2">0%</p>
             </div>
-            <!-- Cancel Button (v7.21) - Made more prominent -->
-            <button id="loadingCancelBtn" onclick="cancelAutoAnalyze()" class="hidden mt-6 px-6 py-3 text-sm font-bold text-white bg-red-500 hover:bg-red-600 border-2 border-red-600 rounded-xl transition-colors shadow-md">
+            <!-- Cancel Button (v7.21) - Made more prominent, using inline style for display control -->
+            <button id="loadingCancelBtn" onclick="cancelAutoAnalyze()" style="display: none;" class="mt-6 px-6 py-3 text-sm font-bold text-white bg-red-500 hover:bg-red-600 border-2 border-red-600 rounded-xl transition-colors shadow-md">
                 ⏹ Stop Analysis
             </button>
         </div>
@@ -4426,12 +4426,22 @@ Respond in JSON format:
     function showLoading(title, message, showProgress = false, showCancel = false) {
         document.getElementById('loadingTitle').textContent = title;
         document.getElementById('loadingMessage').textContent = message;
-        document.getElementById('loadingProgress').classList.toggle('hidden', !showProgress);
 
-        // Show/hide cancel button (v7.21)
+        // Show/hide progress bar
+        const progressEl = document.getElementById('loadingProgress');
+        if (showProgress) {
+            progressEl.classList.remove('hidden');
+        } else {
+            progressEl.classList.add('hidden');
+        }
+
+        // Show/hide cancel button (v7.21) - using ONLY inline styles (no classList)
         const cancelBtn = document.getElementById('loadingCancelBtn');
         if (cancelBtn) {
-            cancelBtn.classList.toggle('hidden', !showCancel);
+            cancelBtn.style.display = showCancel ? 'inline-block' : 'none';
+            console.log('Cancel button display set to:', showCancel ? 'inline-block' : 'none'); // Debug log
+        } else {
+            console.log('Cancel button element not found!'); // Debug log
         }
 
         document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -4444,12 +4454,12 @@ Respond in JSON format:
 
     function hideLoading() {
         document.getElementById('loadingOverlay').classList.add('hidden');
-        // Reset cancel button state (v7.21)
+        // Reset cancel button state (v7.21) - using ONLY inline styles
         const cancelBtn = document.getElementById('loadingCancelBtn');
         if (cancelBtn) {
             cancelBtn.textContent = '⏹ Stop Analysis';
             cancelBtn.disabled = false;
-            cancelBtn.classList.add('hidden');
+            cancelBtn.style.display = 'none';
         }
     }
 
