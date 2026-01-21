@@ -78,9 +78,9 @@
                 </div>
                 <p id="loadingProgressText" class="text-sm text-slate-500 mt-2">0%</p>
             </div>
-            <!-- Cancel Button (v7.21) -->
-            <button id="loadingCancelBtn" onclick="cancelAutoAnalyze()" class="hidden mt-4 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors">
-                Cancel Analysis
+            <!-- Cancel Button (v7.21) - Made more prominent -->
+            <button id="loadingCancelBtn" onclick="cancelAutoAnalyze()" class="hidden mt-6 px-6 py-3 text-sm font-bold text-white bg-red-500 hover:bg-red-600 border-2 border-red-600 rounded-xl transition-colors shadow-md">
+                ⏹ Stop Analysis
             </button>
         </div>
     </div>
@@ -4444,6 +4444,13 @@ Respond in JSON format:
 
     function hideLoading() {
         document.getElementById('loadingOverlay').classList.add('hidden');
+        // Reset cancel button state (v7.21)
+        const cancelBtn = document.getElementById('loadingCancelBtn');
+        if (cancelBtn) {
+            cancelBtn.textContent = '⏹ Stop Analysis';
+            cancelBtn.disabled = false;
+            cancelBtn.classList.add('hidden');
+        }
     }
 
     // Cancel the current auto-analyze operation (v7.21)
@@ -7690,18 +7697,27 @@ Use numbers without formatting for monetary values. If not found, use null.`;
 
         state.isAutoAnalyzing = true;
         state.autoAnalyzeProgress = 0;
-        showLoading('Auto-Analyzing All Criteria', `Preparing batch analysis...`, true);
+        state.autoAnalyzeCancelled = false; // Reset cancel flag (v7.21)
+        showLoading('Auto-Analyzing All Criteria', `Preparing batch analysis...`, true, true); // showCancel=true (v7.21)
 
         try {
             // Filter criteria that need analysis (don't have suggestions yet)
             const criteriaToAnalyze = CRITERIA.filter(c => !state.aiSuggestions[c.id]);
             const totalToAnalyze = criteriaToAnalyze.length;
             let completed = 0;
+            let wasCancelled = false; // Track if cancelled (v7.21)
 
             // Process in parallel batches for speed (respects rate limits)
             const batchSize = CONFIG.API_PARALLEL_BATCH_SIZE;
 
             for (let i = 0; i < criteriaToAnalyze.length; i += batchSize) {
+                // Check if cancelled before starting batch (v7.21)
+                if (state.autoAnalyzeCancelled) {
+                    wasCancelled = true;
+                    showToast('info', 'Analysis Stopped', `Stopped after analyzing ${completed} of ${totalToAnalyze} criteria. Completed criteria have been saved.`);
+                    break;
+                }
+
                 const batch = criteriaToAnalyze.slice(i, i + batchSize);
                 const batchIds = batch.map(c => c.id.toUpperCase()).join(', ');
 
@@ -7742,8 +7758,10 @@ Use numbers without formatting for monetary values. If not found, use null.`;
             // Store original scores for impact tracking
             state.originalScores = { ...state.scores };
 
-            updateLoadingProgress(100, 'Analysis complete!');
-            await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause to show completion
+            if (!wasCancelled) {
+                updateLoadingProgress(100, 'Analysis complete!');
+                await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause to show completion
+            }
 
             hideLoading();
             state.isAutoAnalyzing = false;
@@ -7751,11 +7769,13 @@ Use numbers without formatting for monetary values. If not found, use null.`;
             debouncedAutoSave();
             render();
 
-            const cachedCount = CRITERIA.length - totalToAnalyze;
-            const msg = cachedCount > 0
-                ? `Analyzed ${totalToAnalyze} criteria (${cachedCount} from cache). Review and adjust below.`
-                : `All ${CRITERIA.length} criteria analyzed. Review and adjust below.`;
-            showToast('success', 'Auto-Analysis Complete', msg);
+            if (!wasCancelled) {
+                const cachedCount = CRITERIA.length - totalToAnalyze;
+                const msg = cachedCount > 0
+                    ? `Analyzed ${totalToAnalyze} criteria (${cachedCount} from cache). Review and adjust below.`
+                    : `All ${CRITERIA.length} criteria analyzed. Review and adjust below.`;
+                showToast('success', 'Auto-Analysis Complete', msg);
+            }
         } catch (error) {
             hideLoading();
             state.isAutoAnalyzing = false;
