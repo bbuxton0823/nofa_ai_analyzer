@@ -12,18 +12,32 @@
     <!-- Mammoth.js for Word document (.docx) parsing (v7.19) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <style>
+        /* San Mateo County HCD Color Palette (v7.21) */
+        :root {
+            --smc-blue: #036CB6;
+            --smc-blue-dark: #02538C;
+            --smc-blue-light: #7CBEEC;
+            --smc-teal: #38939B;
+            --smc-teal-dark: #2a7078;
+            --smc-teal-light: #5bb5bd;
+            --smc-orange: #E98A41;
+            --smc-orange-light: #FFD7B8;
+            --smc-green: #8DC63F;
+            --smc-green-light: #BDE0A7;
+            --smc-gray: #555A5A;
+        }
         .drop-zone { transition: all 0.3s ease; }
-        .drop-zone.dragover { background: #dbeafe; border-color: #3b82f6; transform: scale(1.02); }
+        .drop-zone.dragover { background: #E3EDF5; border-color: var(--smc-teal); transform: scale(1.02); }
         .pulse { animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .ai-thinking { background: linear-gradient(90deg, #f0f9ff, #e0f2fe, #f0f9ff); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        .ai-thinking { background: linear-gradient(90deg, #E3EDF5, #F1F9F9, #E3EDF5); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         .score-btn { transition: all 0.15s ease; }
         .score-btn:hover { transform: translateY(-2px); }
-        .score-btn.selected { transform: scale(1.05); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
-        .score-btn:focus { outline: 3px solid #3b82f6; outline-offset: 2px; }
+        .score-btn.selected { transform: scale(1.05); box-shadow: 0 4px 12px rgba(56, 147, 155, 0.4); }
+        .score-btn:focus { outline: 3px solid var(--smc-teal); outline-offset: 2px; }
         .typing-indicator span { animation: blink 1.4s infinite both; }
         .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
@@ -31,18 +45,21 @@
         .pdf-viewer { max-height: 70vh; overflow-y: auto; }
         .pdf-viewer::-webkit-scrollbar { width: 8px; }
         .pdf-viewer::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-        .pdf-viewer::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
-        .highlight-text { background: linear-gradient(120deg, #fef08a 0%, #fde047 100%); padding: 2px 4px; border-radius: 2px; }
-        .loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 100; display: flex; align-items: center; justify-content: center; }
+        .pdf-viewer::-webkit-scrollbar-thumb { background: var(--smc-gray); border-radius: 4px; }
+        .highlight-text { background: linear-gradient(120deg, var(--smc-orange-light) 0%, var(--smc-orange) 100%); padding: 2px 4px; border-radius: 2px; }
+        .loading-overlay { position: fixed; inset: 0; background: rgba(3, 108, 182, 0.85); z-index: 100; display: flex; align-items: center; justify-content: center; }
         .auto-save-indicator { position: fixed; bottom: 20px; right: 20px; z-index: 50; transition: all 0.3s ease; }
         .toast { position: fixed; top: 20px; right: 20px; z-index: 60; transform: translateX(120%); transition: transform 0.3s ease; }
         .toast.show { transform: translateX(0); }
         .impact-positive { color: #059669; }
         .impact-negative { color: #dc2626; }
         .score-change-highlight { animation: scoreHighlight 0.5s ease; }
-        @keyframes scoreHighlight { 0%, 100% { background-color: transparent; } 50% { background-color: #fef08a; } }
+        @keyframes scoreHighlight { 0%, 100% { background-color: transparent; } 50% { background-color: var(--smc-orange-light); } }
         .global-review-card { transition: all 0.2s ease; }
         .global-review-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        /* SMC branded gradients */
+        .smc-header-gradient { background: linear-gradient(135deg, #036CB6 0%, #02538C 50%, #38939B 100%); }
+        .smc-review-gradient { background: linear-gradient(135deg, #38939B 0%, #2a7078 50%, #036CB6 100%); }
         /* Simple/Pro Mode visibility (v7.21) */
         body.simple-mode .pro-mode-only { display: none !important; }
         body.pro-mode .simple-mode-only { display: none !important; }
@@ -52,15 +69,19 @@
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay hidden">
         <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center shadow-2xl">
-            <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <div class="w-16 h-16 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin mx-auto mb-4"></div>
             <h3 id="loadingTitle" class="text-xl font-bold text-slate-800 mb-2">Processing...</h3>
             <p id="loadingMessage" class="text-slate-600">Please wait while we process your file.</p>
             <div id="loadingProgress" class="mt-4 hidden">
                 <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div id="loadingProgressBar" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
+                    <div id="loadingProgressBar" class="h-full bg-teal-600 transition-all duration-300" style="width: 0%"></div>
                 </div>
                 <p id="loadingProgressText" class="text-sm text-slate-500 mt-2">0%</p>
             </div>
+            <!-- Cancel Button (v7.21) -->
+            <button id="loadingCancelBtn" onclick="cancelAutoAnalyze()" class="hidden mt-4 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors">
+                Cancel Analysis
+            </button>
         </div>
     </div>
 
@@ -91,8 +112,8 @@
     </div>
 
     <div id="app" class="max-w-6xl mx-auto p-4 md:p-6">
-        <!-- Header -->
-        <header class="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white rounded-2xl p-6 mb-6 shadow-xl">
+        <!-- Header - San Mateo County HCD Colors -->
+        <header class="smc-header-gradient text-white rounded-2xl p-6 mb-6 shadow-xl">
             <div class="flex items-center justify-between flex-wrap gap-4">
                 <div>
                     <div class="flex items-center gap-3">
@@ -102,8 +123,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h1 class="text-2xl font-bold">NOFA AI Evaluator <span class="text-blue-300 text-lg">v7.21</span></h1>
-                            <p class="text-blue-200 text-sm">Winter FY26-27 • San Mateo County • AI-Assisted Scoring</p>
+                            <h1 class="text-2xl font-bold">NOFA AI Evaluator <span class="text-teal-200 text-lg">v7.21</span></h1>
+                            <p class="text-teal-100 text-sm">Winter FY26-27 • San Mateo County • AI-Assisted Scoring</p>
                         </div>
                     </div>
                 </div>
@@ -128,6 +149,16 @@
                         </svg>
                         <span class="hidden sm:inline">Settings</span>
                     </button>
+                    <!-- Undo Button (v7.21) -->
+                    <button id="undoBtn" onclick="undoLastScoreChange()" class="hidden bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg text-sm font-medium items-center gap-1.5 transition-colors" title="Undo last score change (Ctrl+Z)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                        <span class="hidden sm:inline">Undo</span>
+                    </button>
+                    <!-- Last Saved Indicator (v7.21) -->
+                    <div id="lastSavedIndicator" class="hidden items-center gap-1.5 bg-white/10 px-3 py-2 rounded-lg text-xs text-teal-100">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span id="lastSavedText">Saved</span>
+                    </div>
                     <div id="apiStatus" class="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-lg" role="status" aria-live="polite">
                         <div id="apiDot" class="w-2 h-2 rounded-full bg-red-400" aria-hidden="true"></div>
                         <span id="apiText" class="text-xs">No API Key</span>
@@ -196,7 +227,7 @@
                         <label for="apiKeyInput" class="block text-sm font-medium text-slate-700 mb-2">Anthropic API Key</label>
                         <div class="relative">
                             <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..."
-                                class="w-full px-4 py-3 pr-12 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                                class="w-full px-4 py-3 pr-12 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B] focus:border-[#38939B] font-mono text-sm"
                                 aria-describedby="apiKeyHelp">
                             <button onclick="toggleApiKeyVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Toggle API key visibility">
                                 <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,11 +237,23 @@
                             </button>
                         </div>
                         <p id="apiKeyHelp" class="text-xs text-slate-500 mt-2">Your API key is stored locally and only sent to Anthropic's API.</p>
+                        <!-- Security Warning (v7.21) -->
+                        <div class="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                                <div class="text-xs text-amber-800">
+                                    <p class="font-medium">Security Note</p>
+                                    <p class="mt-0.5 text-amber-700">Your API key is stored in browser localStorage, which is not encrypted. Avoid using this tool on shared or public computers. Consider clearing your browser data when done on shared devices.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="bg-blue-50 rounded-xl p-4">
-                        <p class="text-sm font-medium text-blue-800 mb-2">How to get an API key:</p>
-                        <ol class="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                    <div class="bg-[#F3FAFE] rounded-xl p-4">
+                        <p class="text-sm font-medium text-[#02538C] mb-2">How to get an API key:</p>
+                        <ol class="text-sm text-[#036CB6] space-y-1 list-decimal list-inside">
                             <li>Go to <a href="https://console.anthropic.com" target="_blank" class="underline">console.anthropic.com</a></li>
                             <li>Create an account or sign in</li>
                             <li>Navigate to API Keys</li>
@@ -221,12 +264,12 @@
                     <div>
                         <label for="reviewerName" class="block text-sm font-medium text-slate-700 mb-2">Reviewer Name</label>
                         <input type="text" id="reviewerName" placeholder="Your name"
-                            class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B] focus:border-[#38939B]">
                     </div>
 
                     <div>
                         <label for="reviewerSheet" class="block text-sm font-medium text-slate-700 mb-2">Your Reviewer Role</label>
-                        <select id="reviewerSheet" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <select id="reviewerSheet" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B] focus:border-[#38939B]">
                             <option value="Threshold+Scoring - Reviewer 1">Reviewer 1 - Threshold + Scoring</option>
                             <option value="Scoring Sheet - Reviewer 2" selected>Reviewer 2 - Scoring Only</option>
                         </select>
@@ -234,7 +277,7 @@
                             <p class="font-semibold text-slate-700 mb-2">Understanding Your Role:</p>
                             <div class="space-y-2 text-slate-600">
                                 <div class="flex items-start gap-2">
-                                    <span class="text-blue-600 font-bold">R1:</span>
+                                    <span class="text-[#036CB6] font-bold">R1:</span>
                                     <span><strong>Reviewer 1</strong> evaluates both <em>Threshold Criteria</em> (pass/fail eligibility) AND <em>Scoring Criteria</em></span>
                                 </div>
                                 <div class="flex items-start gap-2">
@@ -283,12 +326,12 @@
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="visionToggle" class="sr-only peer" onchange="toggleVisionAnalysis()">
-                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#E3EDF5] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#38939B]"></div>
                         </label>
                     </div>
 
-                    <div class="mt-3 p-2 bg-blue-50 rounded-lg">
-                        <p class="text-xs text-blue-700"><strong>How it works:</strong> The system scans PDFs for pages with charts, graphs, tables, or low-text content. When detected, vision analysis automatically activates to analyze visual elements.</p>
+                    <div class="mt-3 p-2 bg-[#F3FAFE] rounded-lg">
+                        <p class="text-xs text-[#036CB6]"><strong>How it works:</strong> The system scans PDFs for pages with charts, graphs, tables, or low-text content. When detected, vision analysis automatically activates to analyze visual elements.</p>
                         <p class="text-xs mt-1" id="visionStatusText">Status: Auto-detect enabled</p>
                     </div>
                 </div>
@@ -340,9 +383,9 @@
                                 <div class="text-slate-600">Attachments:</div>
                                 <div id="diagAttachChars" class="text-green-700 font-semibold">-</div>
                                 <div class="text-slate-600">Total to AI:</div>
-                                <div id="diagTotalToAI" class="text-blue-700 font-semibold">-</div>
+                                <div id="diagTotalToAI" class="text-[#036CB6] font-semibold">-</div>
                                 <div class="text-slate-600">Coverage:</div>
-                                <div id="diagCoverage" class="text-blue-700 font-semibold">-</div>
+                                <div id="diagCoverage" class="text-[#036CB6] font-semibold">-</div>
                             </div>
                         </div>
                         <div class="border-t border-slate-200 my-2 pt-2">
@@ -403,7 +446,7 @@
                     <button onclick="clearApiKey()" class="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors">
                         Clear Key
                     </button>
-                    <button onclick="saveSettings()" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
+                    <button onclick="saveSettings()" class="flex-1 px-4 py-3 bg-[#38939B] text-white rounded-xl font-medium hover:bg-[#2a7078] transition-colors">
                         Save Settings
                     </button>
                 </div>
@@ -463,7 +506,7 @@
         <div class="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] shadow-2xl flex flex-col">
             <div class="p-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
                 <div class="flex items-center gap-3">
-                    <button id="backToEvidenceBtn" onclick="backToEvidenceModal()" class="hidden px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm font-medium flex items-center gap-1">
+                    <button id="backToEvidenceBtn" onclick="backToEvidenceModal()" class="hidden px-3 py-1.5 bg-[#E3EDF5] text-[#036CB6] rounded-lg hover:bg-[#B2D5EE] text-sm font-medium flex items-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         Back to Evidence
                     </button>
@@ -475,7 +518,7 @@
                 <div class="flex items-center gap-3">
                     <!-- View Mode Toggle -->
                     <div class="flex items-center bg-slate-100 rounded-lg p-1">
-                        <button id="visualViewBtn" onclick="setPdfViewMode('visual')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-white text-blue-600 shadow-sm">
+                        <button id="visualViewBtn" onclick="setPdfViewMode('visual')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-white text-[#036CB6] shadow-sm">
                             <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                             Visual
                         </button>
@@ -509,16 +552,16 @@
             </div>
 
             <!-- Linked Documents Panel in PDF Viewer (v7.17) -->
-            <div id="pdfLinkedDocsPanel" class="border-t border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 hidden">
-                <button onclick="togglePdfLinkedDocsPanel()" class="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-100/50 transition-colors">
+            <div id="pdfLinkedDocsPanel" class="border-t border-slate-200 bg-gradient-to-r from-[#F3FAFE] to-[#E3EDF5] hidden">
+                <button onclick="togglePdfLinkedDocsPanel()" class="w-full px-4 py-2 flex items-center justify-between hover:bg-[#E3EDF5]/50 transition-colors">
                     <div class="flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 text-[#036CB6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
                         </svg>
-                        <span class="font-medium text-blue-800">Linked Documents</span>
-                        <span id="pdfLinkedDocsCount" class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">0</span>
+                        <span class="font-medium text-[#02538C]">Linked Documents</span>
+                        <span id="pdfLinkedDocsCount" class="bg-[#38939B] text-white text-xs px-2 py-0.5 rounded-full">0</span>
                     </div>
-                    <svg id="pdfLinkedDocsChevron" class="w-5 h-5 text-blue-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg id="pdfLinkedDocsChevron" class="w-5 h-5 text-[#036CB6] transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
                 </button>
@@ -576,8 +619,8 @@
 
                 <p id="commentPromptText" class="text-slate-700 mb-4"></p>
 
-                <div class="bg-blue-50 rounded-xl p-4 mb-4">
-                    <p class="text-sm font-medium text-blue-800 mb-2">Suggested reasoning starters:</p>
+                <div class="bg-[#F3FAFE] rounded-xl p-4 mb-4">
+                    <p class="text-sm font-medium text-[#02538C] mb-2">Suggested reasoning starters:</p>
                     <div id="reasoningSuggestions" class="space-y-2" role="list">
                         <!-- Will be populated dynamically -->
                     </div>
@@ -585,14 +628,14 @@
 
                 <label for="promptedComment" class="sr-only">Your reasoning</label>
                 <textarea id="promptedComment" rows="4"
-                    class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+                    class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B] resize-none"
                     placeholder="Explain why you selected this score..."></textarea>
 
                 <div class="flex gap-3 mt-4">
                     <button onclick="skipCommentPrompt()" class="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors">
                         Skip
                     </button>
-                    <button onclick="savePromptedComment()" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
+                    <button onclick="savePromptedComment()" class="flex-1 px-4 py-3 bg-[#38939B] text-white rounded-xl font-medium hover:bg-[#2a7078] transition-colors">
                         Save Comment
                     </button>
                 </div>
@@ -618,7 +661,7 @@
                     <button onclick="hideErrorModal()" class="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors">
                         Dismiss
                     </button>
-                    <button id="errorRetryBtn" onclick="retryLastAction()" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors hidden">
+                    <button id="errorRetryBtn" onclick="retryLastAction()" class="flex-1 px-4 py-3 bg-[#38939B] text-white rounded-xl font-medium hover:bg-[#2a7078] transition-colors hidden">
                         Retry
                     </button>
                 </div>
@@ -676,7 +719,7 @@
                         <button onclick="clearReferenceDoc('fundingPriorities')" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-colors">
                             Clear
                         </button>
-                        <button onclick="previewReferenceDoc('fundingPriorities')" class="px-4 py-2 border border-blue-200 text-blue-600 rounded-lg text-sm hover:bg-blue-50 transition-colors">
+                        <button onclick="previewReferenceDoc('fundingPriorities')" class="px-4 py-2 border border-[#7CBEEC] text-[#036CB6] rounded-lg text-sm hover:bg-[#E3EDF5] transition-colors">
                             Preview
                         </button>
                     </div>
@@ -707,16 +750,16 @@
                         <button onclick="clearReferenceDoc('guidelines')" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-colors">
                             Clear
                         </button>
-                        <button onclick="previewReferenceDoc('guidelines')" class="px-4 py-2 border border-blue-200 text-blue-600 rounded-lg text-sm hover:bg-blue-50 transition-colors">
+                        <button onclick="previewReferenceDoc('guidelines')" class="px-4 py-2 border border-[#7CBEEC] text-[#036CB6] rounded-lg text-sm hover:bg-[#E3EDF5] transition-colors">
                             Preview
                         </button>
                     </div>
                 </div>
 
                 <!-- How It Works -->
-                <div class="bg-blue-50 rounded-xl p-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">💡 How Reference Documents Work</h4>
-                    <ul class="text-sm text-blue-700 space-y-1 list-disc list-inside">
+                <div class="bg-[#F3FAFE] rounded-xl p-4">
+                    <h4 class="font-semibold text-[#02538C] mb-2">💡 How Reference Documents Work</h4>
+                    <ul class="text-sm text-[#036CB6] space-y-1 list-disc list-inside">
                         <li><strong>Funding Priorities:</strong> Helps AI match projects to specific County priorities</li>
                         <li><strong>Guidelines:</strong> Provides scoring criteria context and eligibility requirements</li>
                         <li>Documents are stored locally in your browser and persist across sessions</li>
@@ -786,9 +829,9 @@
                 </div>
 
                 <!-- How It Works -->
-                <div class="bg-blue-50 rounded-xl p-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">💡 How Linked Documents Work</h4>
-                    <ul class="text-sm text-blue-700 space-y-1 list-disc list-inside">
+                <div class="bg-[#F3FAFE] rounded-xl p-4">
+                    <h4 class="font-semibold text-[#02538C] mb-2">💡 How Linked Documents Work</h4>
+                    <ul class="text-sm text-[#036CB6] space-y-1 list-disc list-inside">
                         <li><strong>Auto-Detection:</strong> Hyperlinks are extracted when you upload an application PDF</li>
                         <li><strong>Auto-Fetch:</strong> Click the button to automatically retrieve and analyze linked PDFs</li>
                         <li><strong>AI Integration:</strong> Fetched content (audits, budgets, exhibits) is included in scoring analysis</li>
@@ -1239,16 +1282,16 @@
         const { documents, reason, priority } = recommendations;
 
         let html = `
-            <div class="mt-3 p-3 rounded-lg ${priority ? 'bg-amber-50 border border-amber-200' : 'bg-blue-50 border border-blue-200'}">
+            <div class="mt-3 p-3 rounded-lg ${priority ? 'bg-amber-50 border border-amber-200' : 'bg-[#F3FAFE] border border-[#7CBEEC]'}">
                 <div class="flex items-start gap-2 mb-2">
-                    <svg class="w-5 h-5 ${priority ? 'text-amber-600' : 'text-blue-600'} flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 ${priority ? 'text-amber-600' : 'text-[#036CB6]'} flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     <div>
-                        <p class="text-sm font-medium ${priority ? 'text-amber-800' : 'text-blue-800'}">
+                        <p class="text-sm font-medium ${priority ? 'text-amber-800' : 'text-[#02538C]'}">
                             ${priority ? '⭐ Key Supporting Documents' : '📎 Related Supporting Documents'}
                         </p>
-                        <p class="text-xs ${priority ? 'text-amber-700' : 'text-blue-700'} mt-0.5">${reason}</p>
+                        <p class="text-xs ${priority ? 'text-amber-700' : 'text-[#036CB6]'} mt-0.5">${reason}</p>
                     </div>
                 </div>
                 <div class="space-y-1 ml-7">`;
@@ -1262,13 +1305,13 @@
 
             html += `
                 <a href="${doc.url}" target="_blank" rel="noopener noreferrer"
-                   class="flex items-center justify-between p-2 bg-white rounded border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors group text-sm">
+                   class="flex items-center justify-between p-2 bg-white rounded border border-slate-200 hover:border-[#7CBEEC] hover:bg-[#E3EDF5] transition-colors group text-sm">
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="text-xs text-slate-500">${getLinkTypeLabel(doc.type)}</span>
                         <span class="font-medium text-slate-700 truncate" title="${doc.name}">${doc.name}</span>
                         ${statusBadge}
                     </div>
-                    <svg class="w-4 h-4 text-blue-500 flex-shrink-0 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 text-[#38939B] flex-shrink-0 group-hover:text-[#036CB6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                     </svg>
                 </a>`;
@@ -1293,18 +1336,18 @@
         const docTypes = [...new Set(documents.map(d => getLinkTypeLabel(d.type)))];
 
         return `
-            <div class="mt-3 p-2 rounded-lg ${priority ? 'bg-amber-50 border border-amber-100' : 'bg-blue-50 border border-blue-100'}">
+            <div class="mt-3 p-2 rounded-lg ${priority ? 'bg-amber-50 border border-amber-100' : 'bg-[#F3FAFE] border border-[#B2D5EE]'}">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <svg class="w-4 h-4 ${priority ? 'text-amber-500' : 'text-blue-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 ${priority ? 'text-amber-500' : 'text-[#38939B]'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
                         </svg>
-                        <span class="text-xs ${priority ? 'text-amber-700' : 'text-blue-700'}">
+                        <span class="text-xs ${priority ? 'text-amber-700' : 'text-[#036CB6]'}">
                             ${priority ? '⭐ Review:' : '📎 May reference:'} ${docTypes.slice(0, 3).join(', ')}${docTypes.length > 3 ? '...' : ''}
                         </span>
                         ${fetchedCount > 0 ? `<span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">${fetchedCount} analyzed</span>` : ''}
                     </div>
-                    <button onclick="showDocumentRecommendationsModal('${criterionId}')" class="text-xs ${priority ? 'text-amber-600 hover:text-amber-800' : 'text-blue-600 hover:text-blue-800'} font-medium">
+                    <button onclick="showDocumentRecommendationsModal('${criterionId}')" class="text-xs ${priority ? 'text-amber-600 hover:text-amber-800' : 'text-[#036CB6] hover:text-[#02538C]'} font-medium">
                         View ${documents.length} docs →
                     </button>
                 </div>
@@ -1323,7 +1366,7 @@
         overlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
         overlay.innerHTML = `
             <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
-                <div class="p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <div class="p-4 border-b border-slate-200 bg-gradient-to-r from-[#F3FAFE] to-[#E3EDF5]">
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 class="text-lg font-bold text-slate-800">${criterionId.toUpperCase()}: Supporting Documents</h3>
@@ -1357,7 +1400,7 @@
 
                             return `
                                 <a href="${doc.url}" target="_blank" rel="noopener noreferrer"
-                                   class="flex items-center justify-between p-3 ${bgClass} rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors group">
+                                   class="flex items-center justify-between p-3 ${bgClass} rounded-lg border border-slate-200 hover:border-[#7CBEEC] hover:bg-[#E3EDF5] transition-colors group">
                                     <div class="flex-1 min-w-0 mr-2">
                                         <div class="flex items-center gap-2 mb-1">
                                             <span class="text-xs text-slate-500">${getLinkTypeLabel(doc.type)}</span>
@@ -1366,7 +1409,7 @@
                                         <p class="font-medium text-slate-700 truncate" title="${doc.name}">${doc.name}</p>
                                         <p class="text-xs text-slate-500">Found on page ${doc.pageNum}</p>
                                     </div>
-                                    <svg class="w-5 h-5 text-blue-500 flex-shrink-0 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 text-[#38939B] flex-shrink-0 group-hover:text-[#036CB6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                                     </svg>
                                 </a>`;
@@ -2116,7 +2159,7 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
                                             View
                                         </button>
                                     ` : ''}
-                                    <a href="${link.url}" target="_blank" class="text-blue-600 hover:text-blue-800 p-1" title="Open in new tab">
+                                    <a href="${link.url}" target="_blank" class="text-[#036CB6] hover:text-[#02538C] p-1" title="Open in new tab">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                                         </svg>
@@ -2309,7 +2352,7 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
                             bgClass = 'bg-amber-50 hover:bg-amber-100';
                         }
                     } else if (link.fetchable) {
-                        statusBadge = '<span class="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Can fetch</span>';
+                        statusBadge = '<span class="text-xs bg-[#E3EDF5] text-[#036CB6] px-1.5 py-0.5 rounded">Can fetch</span>';
                     }
 
                     // Check if this needs the View button (legacy doc or CORS blocked)
@@ -2337,7 +2380,7 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
                                         View
                                     </button>
                                 ` : ''}
-                                <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 p-1" title="Open in new tab">
+                                <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="text-[#38939B] hover:text-[#036CB6] p-1" title="Open in new tab">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                                     </svg>
@@ -2360,7 +2403,7 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
                 }
                 if (fetchableCount > 0) {
                     html += `<button onclick="autoFetchLinkedDocuments(); updatePdfLinkedDocsPanel();"
-                                class="w-full px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                class="w-full px-3 py-2 bg-[#38939B] text-white text-sm font-medium rounded-lg hover:bg-[#2a7078] transition-colors flex items-center justify-center gap-2"
                                 ${state.linkedDocuments.isFetching ? 'disabled' : ''}>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -2583,6 +2626,23 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
         cacheDirty = false;
         console.log('[Cache CLEARED]');
         showToast('info', 'Cache Cleared', 'AI responses will be regenerated on next analysis.');
+    }
+
+    // Clear cache entries for a specific criterion (v7.21)
+    function clearCacheForCriterion(criterionId) {
+        const cache = initResponseCache();
+        const keysToDelete = [];
+        cache.forEach((value, key) => {
+            if (key.endsWith(`_${criterionId}`)) {
+                keysToDelete.push(key);
+            }
+        });
+        keysToDelete.forEach(key => cache.delete(key));
+        if (keysToDelete.length > 0) {
+            cacheDirty = true;
+            persistCache();
+            console.log(`[Cache] Cleared ${keysToDelete.length} entries for criterion ${criterionId}`);
+        }
     }
 
     // Full reset: clear cache AND in-memory AI suggestions for complete fresh start
@@ -3142,6 +3202,8 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
         autoAnalyzeProgress: 0,
         isAutoAnalyzing: false,
         originalScores: {}, // For tracking changes in global review
+        scoreHistory: [], // Undo stack for score changes [{criterionId, oldScore, newScore, timestamp}]
+        autoAnalyzeCancelled: false, // Flag to cancel auto-analyze operation
         documentHash: null, // Hash of normalized document for consistency tracking
         cachedCriteriaCount: 0, // Number of criteria served from cache
         returnToSummary: false, // Flag to return to summary after editing a single criterion
@@ -3414,11 +3476,11 @@ Respond with ONLY the category name (one word, lowercase). If unsure, respond wi
                 iconSvg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
             },
             info: {
-                bg: 'bg-blue-50',
-                border: 'border-blue-200',
-                text: 'text-blue-800',
-                icon: 'text-blue-500',
-                badge: 'bg-blue-100 text-blue-700',
+                bg: 'bg-[#F3FAFE]',
+                border: 'border-[#7CBEEC]',
+                text: 'text-[#02538C]',
+                icon: 'text-[#38939B]',
+                badge: 'bg-[#E3EDF5] text-[#036CB6]',
                 iconSvg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
             }
         };
@@ -4119,7 +4181,7 @@ Respond in JSON format:
             <div class="mt-2">
                 <div class="text-xs text-slate-600 mb-1">📎 Attached:</div>
                 ${docsHtml}
-                <button onclick="uploadSupplementForFlag('${flagType}')" class="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                <button onclick="uploadSupplementForFlag('${flagType}')" class="mt-1 text-xs text-[#036CB6] hover:text-[#02538C] flex items-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Upload Another
                 </button>
@@ -4143,7 +4205,7 @@ Respond in JSON format:
                         <div class="text-xs text-slate-500">
                             ${new Date(doc.uploadedAt).toLocaleDateString()} •
                             ${doc.includeInAnalysis ?
-                                '<span class="text-blue-600">✓ Included in AI analysis</span>' :
+                                '<span class="text-[#036CB6]">✓ Included in AI analysis</span>' :
                                 '<span class="text-slate-400">Reference only</span>'}
                         </div>
                     </div>
@@ -4219,7 +4281,58 @@ Respond in JSON format:
         const indicator = document.getElementById('autoSaveIndicator');
         indicator.classList.remove('hidden');
         setTimeout(() => indicator.classList.add('hidden'), 2000);
+
+        // Update the persistent "last saved" indicator (v7.21)
+        updateLastSavedIndicator();
     }
+
+    // Update the persistent "last saved X ago" indicator (v7.21)
+    function updateLastSavedIndicator() {
+        const indicator = document.getElementById('lastSavedIndicator');
+        const textEl = document.getElementById('lastSavedText');
+        if (!indicator || !textEl) return;
+
+        if (state.lastSaved) {
+            indicator.classList.remove('hidden');
+            indicator.classList.add('flex');
+            const now = new Date();
+            const diff = Math.floor((now - state.lastSaved) / 1000); // seconds
+
+            let timeText;
+            if (diff < 5) {
+                timeText = 'Just saved';
+            } else if (diff < 60) {
+                timeText = `Saved ${diff}s ago`;
+            } else if (diff < 3600) {
+                const mins = Math.floor(diff / 60);
+                timeText = `Saved ${mins}m ago`;
+            } else {
+                const hours = Math.floor(diff / 3600);
+                timeText = `Saved ${hours}h ago`;
+            }
+            textEl.textContent = timeText;
+        } else {
+            indicator.classList.add('hidden');
+            indicator.classList.remove('flex');
+        }
+    }
+
+    // Update undo button visibility based on history (v7.21)
+    function updateUndoButton() {
+        const undoBtn = document.getElementById('undoBtn');
+        if (!undoBtn) return;
+
+        if (state.scoreHistory && state.scoreHistory.length > 0) {
+            undoBtn.classList.remove('hidden');
+            undoBtn.classList.add('flex');
+        } else {
+            undoBtn.classList.add('hidden');
+            undoBtn.classList.remove('flex');
+        }
+    }
+
+    // Start interval to update "last saved" time periodically (v7.21)
+    setInterval(updateLastSavedIndicator, 30000); // Update every 30 seconds
 
     function checkForDraft() {
         try {
@@ -4292,7 +4405,7 @@ Respond in JSON format:
         const icons = {
             success: '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
             error: '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
-            info: '<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+            info: '<svg class="w-6 h-6 text-[#036CB6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
         };
 
         icon.innerHTML = icons[type] || icons.info;
@@ -4310,10 +4423,17 @@ Respond in JSON format:
     // ============================================================
     // LOADING OVERLAY
     // ============================================================
-    function showLoading(title, message, showProgress = false) {
+    function showLoading(title, message, showProgress = false, showCancel = false) {
         document.getElementById('loadingTitle').textContent = title;
         document.getElementById('loadingMessage').textContent = message;
         document.getElementById('loadingProgress').classList.toggle('hidden', !showProgress);
+
+        // Show/hide cancel button (v7.21)
+        const cancelBtn = document.getElementById('loadingCancelBtn');
+        if (cancelBtn) {
+            cancelBtn.classList.toggle('hidden', !showCancel);
+        }
+
         document.getElementById('loadingOverlay').classList.remove('hidden');
     }
 
@@ -4324,6 +4444,16 @@ Respond in JSON format:
 
     function hideLoading() {
         document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+
+    // Cancel the current auto-analyze operation (v7.21)
+    function cancelAutoAnalyze() {
+        state.autoAnalyzeCancelled = true;
+        const cancelBtn = document.getElementById('loadingCancelBtn');
+        if (cancelBtn) {
+            cancelBtn.textContent = 'Cancelling...';
+            cancelBtn.disabled = true;
+        }
     }
 
     // ============================================================
@@ -4543,7 +4673,7 @@ Respond in JSON format:
                 text.textContent = `⚠️ ${summary.warnings} Warning${summary.warnings > 1 ? 's' : ''}`;
             } else {
                 indicator.className = indicator.className.replace(/bg-red-\d+\/?\d*/g, '').replace(/bg-amber-\d+\/?\d*/g, '');
-                indicator.classList.add('bg-blue-500/90', 'hover:bg-blue-500');
+                indicator.classList.add('bg-[#F3FAFE]0/90', 'hover:bg-[#E3EDF5]0');
                 indicator.classList.remove('animate-pulse');
                 text.textContent = `ℹ️ ${summary.info} Info`;
             }
@@ -4576,7 +4706,7 @@ Respond in JSON format:
                         <span class="px-2 py-0.5 text-xs font-medium rounded-full ${
                             flag.severity === 'critical' ? 'bg-red-100 text-red-700' :
                             flag.severity === 'warning' ? 'bg-amber-100 text-amber-700' :
-                            'bg-blue-100 text-blue-700'
+                            'bg-[#E3EDF5] text-[#036CB6]'
                         }">${severityLabel}</span>
                         ${hasAttachments ? '<span class="px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">📎 Doc Attached</span>' : ''}
                     </div>
@@ -4592,7 +4722,7 @@ Respond in JSON format:
         const modalHtml = `
             <div id="redFlagsModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onclick="if(event.target.id==='redFlagsModal')closeRedFlagsModal()">
                 <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden" onclick="event.stopPropagation()">
-                    <div class="bg-gradient-to-r ${summary.critical > 0 ? 'from-red-600 to-red-700' : summary.warnings > 0 ? 'from-amber-500 to-amber-600' : 'from-blue-500 to-blue-600'} text-white p-6">
+                    <div class="bg-gradient-to-r ${summary.critical > 0 ? 'from-red-600 to-red-700' : summary.warnings > 0 ? 'from-amber-500 to-amber-600' : 'from-[#38939B] to-[#036CB6]'} text-white p-6">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4688,11 +4818,11 @@ Respond in JSON format:
 
         if (simpleBtn && proBtn) {
             if (state.uiMode === 'simple') {
-                simpleBtn.className = 'px-3 py-1.5 rounded-md text-xs font-medium transition-all bg-white text-blue-900';
+                simpleBtn.className = 'px-3 py-1.5 rounded-md text-xs font-medium transition-all bg-white text-[#02538C]';
                 proBtn.className = 'px-3 py-1.5 rounded-md text-xs font-medium transition-all text-white/70 hover:text-white';
             } else {
                 simpleBtn.className = 'px-3 py-1.5 rounded-md text-xs font-medium transition-all text-white/70 hover:text-white';
-                proBtn.className = 'px-3 py-1.5 rounded-md text-xs font-medium transition-all bg-white text-blue-900';
+                proBtn.className = 'px-3 py-1.5 rounded-md text-xs font-medium transition-all bg-white text-[#02538C]';
             }
         }
 
@@ -4786,6 +4916,63 @@ Respond in JSON format:
                 counterArgModal.remove();
             } else if (commentPromptModal && !commentPromptModal.classList.contains('hidden')) {
                 commentPromptModal.classList.add('hidden');
+            }
+        }
+    });
+
+    // Keyboard shortcuts for scoring and undo (v7.21)
+    document.addEventListener('keydown', function(e) {
+        // Don't trigger if user is typing in an input/textarea
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+            return;
+        }
+
+        // Don't trigger if a modal is open
+        const settingsModal = document.getElementById('settingsModal');
+        const pdfViewerModal = document.getElementById('pdfViewerModal');
+        if ((settingsModal && !settingsModal.classList.contains('hidden')) ||
+            (pdfViewerModal && !pdfViewerModal.classList.contains('hidden'))) {
+            return;
+        }
+
+        // Ctrl+Z or Cmd+Z for undo
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+            e.preventDefault();
+            undoLastScoreChange();
+            return;
+        }
+
+        // Number keys 0-4 for quick scoring (only on scoring/globalReview steps)
+        if (state.currentStep === 'scoring' || state.currentStep === 'globalReview') {
+            const key = parseInt(e.key);
+            if (!isNaN(key) && key >= 0 && key <= 4) {
+                // Find the currently focused/visible criterion
+                let targetCriterionId = null;
+
+                if (state.currentStep === 'scoring') {
+                    // In scoring step, use current criterion
+                    const criterion = CRITERIA[state.currentCriterionIndex];
+                    if (criterion && criterion.validScores.includes(key)) {
+                        targetCriterionId = criterion.id;
+                    }
+                } else if (state.currentStep === 'globalReview') {
+                    // In global review, find the criterion card that's most visible/focused
+                    const focusedCard = document.querySelector('.global-review-card:hover, .global-review-card:focus-within');
+                    if (focusedCard) {
+                        const criterionDiv = focusedCard.querySelector('[data-criterion]');
+                        if (criterionDiv) {
+                            targetCriterionId = criterionDiv.getAttribute('data-criterion');
+                        }
+                    }
+                }
+
+                if (targetCriterionId) {
+                    const criterion = CRITERIA.find(c => c.id === targetCriterionId);
+                    if (criterion && criterion.validScores.includes(key)) {
+                        updateGlobalScore(targetCriterionId, key);
+                        showToast('info', 'Score Set', `${targetCriterionId.toUpperCase()}: Score ${key} (keyboard shortcut)`);
+                    }
+                }
             }
         }
     });
@@ -4897,13 +5084,13 @@ Respond in JSON format:
             // Vision is manually enabled
             if (state.pdfPageImages.length > 0) {
                 statusText = `Status: Always on (${state.pdfPageImages.length} pages ready)`;
-                statusClass += 'text-blue-600';
+                statusClass += 'text-[#036CB6]';
             } else if (state.pdfDocument) {
                 statusText = 'Status: Always on (preparing pages...)';
                 statusClass += 'text-amber-600';
             } else {
                 statusText = 'Status: Always on (load a PDF to begin)';
-                statusClass += 'text-blue-600';
+                statusClass += 'text-[#036CB6]';
             }
         } else if (state.visionAutoDetect) {
             // Auto-detect is on but no visual content detected yet
@@ -4998,7 +5185,7 @@ Respond in JSON format:
             } else if (state.visionEnabled) {
                 if (state.pdfPageImages.length > 0) {
                     visionStatusEl.textContent = `Always on (${state.pdfPageImages.length} pages)`;
-                    visionStatusEl.className = 'text-blue-600 font-medium';
+                    visionStatusEl.className = 'text-[#036CB6] font-medium';
                 } else {
                     visionStatusEl.textContent = 'Always on (no pages rendered)';
                     visionStatusEl.className = 'text-amber-600 font-medium';
@@ -5259,9 +5446,9 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
                 </div>
 
                 <!-- Help Section -->
-                <div class="bg-blue-50 rounded-xl p-4">
-                    <h4 class="font-semibold text-blue-800 mb-2">Cell Reference Format</h4>
-                    <p class="text-sm text-blue-700">
+                <div class="bg-[#F3FAFE] rounded-xl p-4">
+                    <h4 class="font-semibold text-[#02538C] mb-2">Cell Reference Format</h4>
+                    <p class="text-sm text-[#036CB6]">
                         Use Excel-style cell references (e.g., A1, B23, H64). These map to specific cells in your scoring template spreadsheet.
                     </p>
                 </div>
@@ -5369,7 +5556,7 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
         if (mode === 'visual') {
             visualView.classList.remove('hidden');
             textView.classList.add('hidden');
-            visualBtn.className = 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-white text-blue-600 shadow-sm';
+            visualBtn.className = 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-white text-[#036CB6] shadow-sm';
             textBtn.className = 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors text-slate-600 hover:text-slate-800';
             zoomControls.classList.remove('hidden');
             // Render visual PDF page
@@ -5377,7 +5564,7 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
         } else {
             visualView.classList.add('hidden');
             textView.classList.remove('hidden');
-            textBtn.className = 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-white text-blue-600 shadow-sm';
+            textBtn.className = 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-white text-[#036CB6] shadow-sm';
             visualBtn.className = 'px-3 py-1.5 text-sm font-medium rounded-md transition-colors text-slate-600 hover:text-slate-800';
             zoomControls.classList.add('hidden');
             // Render text view
@@ -5523,7 +5710,7 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
                     <strong>Your scores and comments are safe</strong> — re-uploading will only add visual viewing capability.
                 </p>
                 <div class="flex gap-3 justify-center">
-                    <label class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                    <label class="px-4 py-2 bg-[#38939B] text-white rounded-lg hover:bg-[#2a7078] cursor-pointer transition-colors">
                         <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                         </svg>
@@ -5807,7 +5994,7 @@ Last Analysis: ${diag.lastAnalysisTimestamp ? new Date(diag.lastAnalysisTimestam
             : `Please provide your reasoning for the score of ${selectedScore}.`;
         document.getElementById('commentPromptText').textContent = promptText;
         const suggestionsHtml = criterion.reasoningStarters.map((starter, i) => `
-            <button onclick="useReasoningStarter(${i})" class="text-left w-full px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 rounded-lg transition-colors" role="listitem">
+            <button onclick="useReasoningStarter(${i})" class="text-left w-full px-3 py-2 text-sm text-[#036CB6] hover:bg-[#E3EDF5] rounded-lg transition-colors" role="listitem">
                 "${starter}"
             </button>
         `).join('');
@@ -6394,7 +6581,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
         // Build linked documents context (v7.17)
         const linkedDocsContext = buildLinkedDocumentsContext();
 
-        const systemPrompt = `You are an expert NOFA reviewer for San Mateo County Department of Housing. You are evaluating criterion: "${criterion.question}"\n\nIMPORTANT CONTEXT - NONPROFIT APPLICANTS:\nMost NOFA applicants are 501(c)(3) nonprofit organizations. When evaluating financial information, apply nonprofit-appropriate standards:\n- Nonprofits do NOT generate "income" like businesses - they secure grants, contracts, and donations\n- A budget showing expenses equal to revenue is NORMAL (spending grants as intended)\n- "Operating on reserves" can indicate HEALTHY financial management, not distress\n- Funding gaps often represent the portion being requested (why they're applying)\n- Evaluate: audit findings, funding diversity, reserve levels, and grant management track record\n- Do NOT penalize organizations for seeking grant funding or having budgets that rely on multiple funders\n\nSCORING RULE:\n${criterion.scoringRule}\n\nPROJECT INFO:\n- Applicant: ${state.projectInfo.applicant || 'Unknown'}\n- Project: ${state.projectInfo.project || 'Unknown'}\n- Amount Requested: ${formatCurrency(state.projectInfo.amountRequested)}\n- Total Cost: ${formatCurrency(state.projectInfo.totalCost)}\n- Clients Served: ${formatNumber(state.projectInfo.clientsServed)}\n- Cost Per Client: ${costPerClient ? formatCurrency(costPerClient) : 'N/A'}\n- County % of Total: ${countyPercent ? countyPercent.toFixed(1) + '%' : 'N/A'}${referenceContext}${linkedDocsContext}\n\nIMPORTANT: The application text includes BOTH the main narrative AND attachments/exhibits section. Look for evidence in attachments (financial statements, audits, organizational charts, letters of support, etc.) when evaluating criteria that reference them.${visionContext}\n\nWhen evaluating priority alignment, cross-reference the application against the County Funding Priorities document if provided. Cite specific priorities by name when relevant.\n\nProvide BOTH a recommendation AND a counter-argument.\n\nRespond with ONLY a JSON object:\n{\n    "suggestedScore": 2,\n    "reasoning": "Your detailed reasoning citing specific evidence from the application, attachments${linkedDocsContext ? ', and linked supporting documents' : ''}${state.visionEnabled ? ', including any charts, graphs, or visual elements you observed' : ''}. Reference specific County priorities if applicable.",\n    "counterArgument": "A thoughtful argument for why a different score might be appropriate",\n    "counterScore": 1,\n    "relevantExcerpts": ["Exact quote 1", "Exact quote 2"],\n    "pageReferences": [1, 3],\n    "confidence": "high|medium|low"\n}\n\nOnly suggest scores from: ${criterion.validScores.join(', ')}`;
+        const systemPrompt = `You are an expert NOFA reviewer for San Mateo County Department of Housing. You are evaluating criterion: "${criterion.question}"\n\nIMPORTANT CONTEXT - NONPROFIT APPLICANTS:\nMost NOFA applicants are 501(c)(3) nonprofit organizations. When evaluating financial information, apply nonprofit-appropriate standards:\n- Nonprofits do NOT generate "income" like businesses - they secure grants, contracts, and donations\n- A budget showing expenses equal to revenue is NORMAL (spending grants as intended)\n- "Operating on reserves" can indicate HEALTHY financial management, not distress\n- Funding gaps often represent the portion being requested (why they're applying)\n- Evaluate: audit findings, funding diversity, reserve levels, and grant management track record\n- Do NOT penalize organizations for seeking grant funding or having budgets that rely on multiple funders\n\nSCORING RULE:\n${criterion.scoringRule}\n\nPROJECT INFO:\n- Applicant: ${state.projectInfo.applicant || 'Unknown'}\n- Project: ${state.projectInfo.project || 'Unknown'}\n- Amount Requested: ${formatCurrency(state.projectInfo.amountRequested)}\n- Total Cost: ${formatCurrency(state.projectInfo.totalCost)}\n- Clients Served: ${formatNumber(state.projectInfo.clientsServed)}\n- Cost Per Client: ${costPerClient ? formatCurrency(costPerClient) : 'N/A'}\n- County % of Total: ${countyPercent ? countyPercent.toFixed(1) + '%' : 'N/A'}${referenceContext}${linkedDocsContext}\n\nIMPORTANT: The application text includes BOTH the main narrative AND attachments/exhibits section. Look for evidence in attachments (financial statements, audits, organizational charts, letters of support, etc.) when evaluating criteria that reference them.${visionContext}\n\nWhen evaluating priority alignment, cross-reference the application against the County Funding Priorities document if provided. Cite specific priorities by name when relevant.\n\nProvide BOTH a recommendation AND a counter-argument.\n\nIMPORTANT: Keep your reasoning CONCISE and DIRECT. Maximum 2-3 sentences. State the key finding and evidence, not lengthy explanations.\n\nRespond with ONLY a JSON object:\n{\n    "suggestedScore": 2,\n    "reasoning": "CONCISE 2-3 sentence assessment. State the key finding and cite ONE specific piece of evidence. Be direct, not verbose.",\n    "counterArgument": "Brief 1-2 sentence alternative perspective",\n    "counterScore": 1,\n    "relevantExcerpts": ["Exact quote 1", "Exact quote 2"],\n    "pageReferences": [1, 3],\n    "confidence": "high|medium|low"\n}\n\nOnly suggest scores from: ${criterion.validScores.join(', ')}`;
 
         try {
             let response;
@@ -6565,20 +6752,20 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                     <h2 class="text-xl font-bold text-slate-800 mb-2">Step 2: Upload NOFA Application (PDF)</h2>
                     <p class="text-slate-500 mb-4">Upload the PDF application to begin AI-assisted evaluation</p>
                     ${state.applicationText ? `
-                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <div class="bg-[#F3FAFE] border border-[#7CBEEC] rounded-xl p-4">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                        <span class="text-blue-700 font-medium">Application Loaded</span>
+                                        <svg class="w-5 h-5 text-[#036CB6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span class="text-[#036CB6] font-medium">Application Loaded</span>
                                     </div>
-                                    <p class="text-sm text-blue-600 ml-7">${state.pdfPages.length} pages extracted</p>
+                                    <p class="text-sm text-[#036CB6] ml-7">${state.pdfPages.length} pages extracted</p>
                                 </div>
-                                <button onclick="clearPdf()" class="text-sm text-blue-600 hover:text-blue-800">Change</button>
+                                <button onclick="clearPdf()" class="text-sm text-[#036CB6] hover:text-[#02538C]">Change</button>
                             </div>
                         </div>
                     ` : `
-                        <div id="pdfDropZone" class="drop-zone border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all" role="button" tabindex="0" aria-label="Upload PDF application">
+                        <div id="pdfDropZone" class="drop-zone border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-[#5bb5bd] hover:bg-[#E3EDF5]/50 transition-all" role="button" tabindex="0" aria-label="Upload PDF application">
                             <svg class="w-12 h-12 mx-auto mb-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                             <p class="text-slate-600 font-medium">Drop PDF application here or click to browse</p>
                             <p class="text-xs text-slate-400 mt-2">Maximum file size: ${CONFIG.MAX_PDF_SIZE_MB}MB</p>
@@ -6596,14 +6783,14 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                     <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                         <h3 class="text-lg font-bold text-slate-800 mb-3">Choose Your Evaluation Method</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <button onclick="goToProjectInfo()" class="bg-blue-50 border-2 border-blue-200 text-left p-5 rounded-xl hover:border-blue-400 hover:bg-blue-100 transition-all group">
+                            <button onclick="goToProjectInfo()" class="bg-[#F3FAFE] border-2 border-[#7CBEEC] text-left p-5 rounded-xl hover:border-[#5bb5bd] hover:bg-[#E3EDF5] transition-all group">
                                 <div class="flex items-start gap-3">
-                                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <div class="w-10 h-10 bg-[#38939B] rounded-lg flex items-center justify-center flex-shrink-0">
                                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                                     </div>
                                     <div>
-                                        <p class="font-semibold text-blue-800 group-hover:text-blue-900">Manual Step-by-Step</p>
-                                        <p class="text-sm text-blue-600 mt-1">Evaluate each criterion individually with AI assistance</p>
+                                        <p class="font-semibold text-[#02538C] group-hover:text-[#02538C]">Manual Step-by-Step</p>
+                                        <p class="text-sm text-[#036CB6] mt-1">Evaluate each criterion individually with AI assistance</p>
                                     </div>
                                 </div>
                             </button>
@@ -6639,8 +6826,8 @@ Use numbers without formatting for monetary values. If not found, use null.`;
             <div class="fade-in max-w-2xl mx-auto">
                 <!-- Welcome Message for Simple Mode -->
                 <div class="text-center mb-8">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-16 h-16 bg-[#E3EDF5] rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-[#036CB6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
@@ -6649,18 +6836,18 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                 </div>
 
                 ${!hasApiKey ? `
-                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
+                    <div class="bg-[#F3FAFE] border border-[#7CBEEC] rounded-xl p-5 mb-6">
                         <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-10 h-10 bg-[#E3EDF5] rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-[#036CB6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                                 </svg>
                             </div>
                             <div class="flex-1">
-                                <p class="font-semibold text-blue-800">Set Up AI Scoring</p>
-                                <p class="text-sm text-blue-600">Add your API key to enable AI-assisted evaluations.</p>
+                                <p class="font-semibold text-[#02538C]">Set Up AI Scoring</p>
+                                <p class="text-sm text-[#036CB6]">Add your API key to enable AI-assisted evaluations.</p>
                             </div>
-                            <button onclick="showSettings()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                            <button onclick="showSettings()" class="px-4 py-2 bg-[#38939B] text-white rounded-lg text-sm font-medium hover:bg-[#2a7078] transition-colors">
                                 Set Up
                             </button>
                         </div>
@@ -6751,8 +6938,8 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                         ` : `
                             <div id="pdfDropZone" class="drop-zone cursor-pointer" role="button" tabindex="0">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="w-12 h-12 bg-[#F3FAFE] rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <svg class="w-6 h-6 text-[#38939B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                                         </svg>
                                     </div>
@@ -6760,7 +6947,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                         <p class="font-medium text-slate-800">Upload NOFA Application</p>
                                         <p class="text-sm text-slate-500">The PDF application to evaluate</p>
                                     </div>
-                                    <div class="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
+                                    <div class="px-4 py-2 bg-[#F3FAFE] text-[#036CB6] rounded-lg text-sm font-medium">
                                         Browse
                                     </div>
                                 </div>
@@ -6772,13 +6959,13 @@ Use numbers without formatting for monetary values. If not found, use null.`;
 
                 <!-- Ready to Start -->
                 ${isReady ? `
-                    <div class="mt-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white text-center">
+                    <div class="mt-8 bg-gradient-to-r from-[#38939B] to-[#036CB6] rounded-xl p-6 text-white text-center">
                         <h3 class="text-lg font-bold mb-2">Ready to Evaluate!</h3>
-                        <p class="text-blue-100 mb-4">${state.projectInfo.applicant}${state.projectInfo.amountRequested ? ` • ${formatCurrency(state.projectInfo.amountRequested)}` : ''}</p>
-                        <button onclick="startAutoAnalyzeAll()" class="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
+                        <p class="text-teal-100 mb-4">${state.projectInfo.applicant}${state.projectInfo.amountRequested ? ` • ${formatCurrency(state.projectInfo.amountRequested)}` : ''}</p>
+                        <button onclick="startAutoAnalyzeAll()" class="px-6 py-3 bg-white text-[#036CB6] rounded-lg font-semibold hover:bg-[#E3EDF5] transition-colors">
                             Start AI Evaluation
                         </button>
-                        <p class="text-xs text-blue-200 mt-3">AI will analyze the application and suggest scores. You'll review and finalize.</p>
+                        <p class="text-xs text-teal-200 mt-3">AI will analyze the application and suggest scores. You'll review and finalize.</p>
                     </div>
                 ` : ''}
 
@@ -6808,8 +6995,8 @@ Use numbers without formatting for monetary values. If not found, use null.`;
             iconColor = 'text-amber-500';
             message = `${warningCount} item${warningCount > 1 ? 's' : ''} to review in this application.`;
         } else {
-            alertClass = 'bg-blue-50 border-blue-200';
-            iconColor = 'text-blue-500';
+            alertClass = 'bg-[#F3FAFE] border-[#7CBEEC]';
+            iconColor = 'text-[#38939B]';
             message = `${summary.info} note${summary.info > 1 ? 's' : ''} about this application.`;
         }
 
@@ -6822,7 +7009,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                         </svg>
                         <span class="text-sm font-medium text-slate-700">${message}</span>
                     </div>
-                    <button onclick="showRedFlagsModal()" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                    <button onclick="showRedFlagsModal()" class="text-sm text-[#036CB6] hover:text-[#02538C] font-medium">
                         View Details
                     </button>
                 </div>
@@ -6846,10 +7033,10 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                             <p class="text-sm text-slate-500">Verify AI-extracted data (edit if needed)</p>
                         </div>
                     </div>
-                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4" role="alert">
+                    <div class="bg-[#F3FAFE] border border-[#7CBEEC] rounded-xl p-4 mb-4" role="alert">
                         <div class="flex items-start gap-2">
-                            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <p class="text-sm text-blue-800">This information was extracted by AI. Please verify accuracy before proceeding.</p>
+                            <svg class="w-5 h-5 text-[#036CB6] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <p class="text-sm text-[#02538C]">This information was extracted by AI. Please verify accuracy before proceeding.</p>
                         </div>
                     </div>
 
@@ -6870,41 +7057,41 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                     <div class="space-y-4">
                         <div>
                             <label for="infoApplicant" class="block text-sm font-medium text-slate-700 mb-1">Applicant/Organization</label>
-                            <input type="text" id="infoApplicant" value="${info.applicant || ''}" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="infoApplicant" value="${info.applicant || ''}" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B]">
                         </div>
                         <div>
                             <label for="infoProject" class="block text-sm font-medium text-slate-700 mb-1">Project Title</label>
-                            <input type="text" id="infoProject" value="${info.project || ''}" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="infoProject" value="${info.project || ''}" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B]">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label for="infoAmount" class="block text-sm font-medium text-slate-700 mb-1">Amount Requested</label>
                                 <div class="relative">
                                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                                    <input type="number" id="infoAmount" value="${info.amountRequested || ''}" class="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500">
+                                    <input type="number" id="infoAmount" value="${info.amountRequested || ''}" class="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B]">
                                 </div>
                             </div>
                             <div>
                                 <label for="infoTotalCost" class="block text-sm font-medium text-slate-700 mb-1">Total Project Cost</label>
                                 <div class="relative">
                                     <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                                    <input type="number" id="infoTotalCost" value="${info.totalCost || ''}" class="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500">
+                                    <input type="number" id="infoTotalCost" value="${info.totalCost || ''}" class="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B]">
                                 </div>
                             </div>
                         </div>
                         <div>
                             <label for="infoClients" class="block text-sm font-medium text-slate-700 mb-1">Clients/Households Served</label>
-                            <input type="number" id="infoClients" value="${info.clientsServed || ''}" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <input type="number" id="infoClients" value="${info.clientsServed || ''}" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B]">
                         </div>
                         <div>
                             <label for="infoDescription" class="block text-sm font-medium text-slate-700 mb-1">Project Description</label>
-                            <textarea id="infoDescription" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none">${info.projectDescription || ''}</textarea>
+                            <textarea id="infoDescription" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B] resize-none">${info.projectDescription || ''}</textarea>
                         </div>
                     </div>
 
                     ${renderSupplementalDocsPanel()}
 
-                    <button onclick="saveProjectInfoAndContinue()" class="mt-6 w-full bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
+                    <button onclick="saveProjectInfoAndContinue()" class="mt-6 w-full bg-[#38939B] text-white py-4 rounded-xl font-semibold hover:bg-[#2a7078] transition-colors">
                         Continue to Scoring
                     </button>
                 </div>
@@ -6957,7 +7144,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                 <div class="flex-shrink-0 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white rounded-2xl p-4 mb-4 shadow-xl">
                     <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center font-bold">${criterion.section}</div>
+                            <div class="w-10 h-10 bg-[#F3FAFE]0 text-white rounded-xl flex items-center justify-center font-bold">${criterion.section}</div>
                             <div>
                                 <h3 class="font-bold">${criterion.sectionTitle}</h3>
                                 <p class="text-sm text-slate-300">Question ${state.currentCriterionIndex + 1} of ${CRITERIA.length} • Max ${criterion.validScores[criterion.validScores.length - 1]} pts</p>
@@ -6981,7 +7168,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                         </div>
                     </div>
                     <div class="h-2 bg-white/20 rounded-full overflow-hidden" role="progressbar" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100">
-                        <div class="h-full bg-blue-400 transition-all duration-300" style="width: ${progress}%"></div>
+                        <div class="h-full bg-[#5bb5bd] transition-all duration-300" style="width: ${progress}%"></div>
                     </div>
                 </div>
 
@@ -7015,7 +7202,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                             <div class="flex flex-wrap gap-3" role="group" aria-label="Score selection">
                                 ${criterion.validScores.map(score => `
                                     <button onclick="selectScore('${criterion.id}', ${score})"
-                                        class="score-btn w-14 h-14 rounded-xl font-bold text-lg border-2 transition-all ${currentScore === score ? 'bg-blue-600 text-white border-blue-600 selected' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'}"
+                                        class="score-btn w-14 h-14 rounded-xl font-bold text-lg border-2 transition-all ${currentScore === score ? 'bg-[#38939B] text-white border-[#38939B] selected' : 'bg-white text-slate-700 border-slate-200 hover:border-[#5bb5bd]'}"
                                         aria-pressed="${currentScore === score}" aria-label="Score ${score}">
                                         ${score}
                                     </button>
@@ -7026,7 +7213,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                             <label for="criterionComment" class="block text-sm font-medium text-slate-700 mb-2">
                                 Your Reasoning ${criterion.requiresComment ? '<span class="text-red-500">(Required)</span>' : '<span class="text-slate-400">(Recommended)</span>'}
                             </label>
-                            <textarea id="criterionComment" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Explain why you selected this score...">${currentComment}</textarea>
+                            <textarea id="criterionComment" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B] resize-none" placeholder="Explain why you selected this score...">${currentComment}</textarea>
                         </div>
                     </div>
                 </div>
@@ -7050,7 +7237,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                 Back
                             </button>
-                            <button onclick="handleNextCriterion()" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
+                            <button onclick="handleNextCriterion()" class="px-6 py-2.5 bg-[#38939B] text-white rounded-lg font-medium hover:bg-[#2a7078] transition-colors flex items-center gap-2">
                                 ${state.currentCriterionIndex < CRITERIA.length - 1 ? 'Next' : 'Finish'}
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </button>
@@ -7076,18 +7263,18 @@ Use numbers without formatting for monetary values. If not found, use null.`;
         container.innerHTML = `
             <div class="fade-in flex flex-col" style="height: calc(100vh - 180px);">
                 <!-- STICKY HEADER - Progress & Section (Simple Mode) -->
-                <div class="flex-shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-4 mb-4 shadow-xl">
+                <div class="flex-shrink-0 bg-gradient-to-r from-[#38939B] to-[#036CB6] text-white rounded-2xl p-4 mb-4 shadow-xl">
                     <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center font-bold">${criterion.section}</div>
                             <div>
                                 <h3 class="font-bold">${criterion.sectionTitle}</h3>
-                                <p class="text-sm text-blue-100">Question ${state.currentCriterionIndex + 1} of ${CRITERIA.length} • Up to ${criterion.validScores[criterion.validScores.length - 1]} pts</p>
+                                <p class="text-sm text-teal-100">Question ${state.currentCriterionIndex + 1} of ${CRITERIA.length} • Up to ${criterion.validScores[criterion.validScores.length - 1]} pts</p>
                             </div>
                         </div>
                         <div class="text-right">
                             <div class="text-xl font-bold">${scoredCount}/${CRITERIA.length}</div>
-                            <div class="text-blue-100 text-xs">${totalScore} pts scored</div>
+                            <div class="text-teal-100 text-xs">${totalScore} pts scored</div>
                         </div>
                     </div>
                     <div class="h-2 bg-white/20 rounded-full overflow-hidden">
@@ -7136,7 +7323,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                             <div class="grid grid-cols-${Math.min(criterion.validScores.length, 5)} gap-3">
                                 ${criterion.validScores.map(score => `
                                     <button onclick="selectScore('${criterion.id}', ${score})"
-                                        class="score-btn py-4 rounded-xl font-bold text-xl border-2 transition-all ${currentScore === score ? 'bg-blue-600 text-white border-blue-600 selected ring-2 ring-blue-300 ring-offset-2' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400 hover:bg-blue-50'}">
+                                        class="score-btn py-4 rounded-xl font-bold text-xl border-2 transition-all ${currentScore === score ? 'bg-[#38939B] text-white border-[#38939B] selected ring-2 ring-[#7CBEEC] ring-offset-2' : 'bg-white text-slate-700 border-slate-200 hover:border-[#5bb5bd] hover:bg-teal-50'}">
                                         ${score}
                                     </button>
                                 `).join('')}
@@ -7148,7 +7335,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                             <label for="criterionComment" class="block text-sm font-medium text-slate-700 mb-2">
                                 Add Notes <span class="text-slate-400">(optional)</span>
                             </label>
-                            <textarea id="criterionComment" rows="2" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Add any notes about your score...">${currentComment}</textarea>
+                            <textarea id="criterionComment" rows="2" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#38939B] resize-none" placeholder="Add any notes about your score...">${currentComment}</textarea>
                         </div>
                     </div>
                 </div>
@@ -7171,7 +7358,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                 Back
                             </button>
-                            <button onclick="handleNextCriterion()" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2">
+                            <button onclick="handleNextCriterion()" class="px-6 py-3 bg-[#38939B] text-white rounded-xl font-semibold hover:bg-[#2a7078] transition-colors flex items-center gap-2">
                                 ${state.currentCriterionIndex < CRITERIA.length - 1 ? 'Next Question' : 'Finish Evaluation'}
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </button>
@@ -7329,15 +7516,22 @@ Use numbers without formatting for monetary values. If not found, use null.`;
         }
 
         state.isAutoAnalyzing = true;
+        state.autoAnalyzeCancelled = false; // Reset cancel flag
         state.autoAnalyzeProgress = 0;
         // Reset error tracking (v7.19)
         state.apiErrors = [];
         state.visionFailures = 0;
         const totalToAnalyze = remainingCriteria.length;
-        showLoading(`Auto-Analyzing ${totalToAnalyze} Criteria`, `Starting analysis...`, true);
+        showLoading(`Auto-Analyzing ${totalToAnalyze} Criteria`, `Starting analysis...`, true, true); // showCancel=true
 
         try {
             for (let i = 0; i < remainingCriteria.length; i++) {
+                // Check if cancelled
+                if (state.autoAnalyzeCancelled) {
+                    showToast('info', 'Analysis Cancelled', `Stopped after analyzing ${i} of ${totalToAnalyze} criteria.`);
+                    break;
+                }
+
                 const criterion = remainingCriteria[i];
                 state.autoAnalyzeProgress = Math.round(((i) / totalToAnalyze) * 100);
                 updateLoadingProgress(state.autoAnalyzeProgress, `Analyzing ${criterion.id.toUpperCase()}: ${criterion.question.substring(0, 40)}...`);
@@ -7566,7 +7760,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
             fundingClass = 'text-green-600';
         } else if (percentage >= 60) {
             fundingRecommendation = 'Good Candidate - Recommend Funding with Conditions';
-            fundingClass = 'text-blue-600';
+            fundingClass = 'text-[#036CB6]';
         } else if (percentage >= 45) {
             fundingRecommendation = 'Marginal Candidate - Consider Partial Funding';
             fundingClass = 'text-amber-600';
@@ -7584,18 +7778,18 @@ Use numbers without formatting for monetary values. If not found, use null.`;
         const simpleMode = isSimpleMode();
 
         container.innerHTML = `
-            <div class="fade-in flex flex-col" style="height: calc(100vh - 180px);">
+            <div class="fade-in flex flex-col" style="height: calc(100vh - 240px); min-height: 450px;">
                 <!-- STICKY HEADER - Score Summary & Recommendation (v7.21 - Compact) -->
-                <div class="flex-shrink-0 bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 text-white rounded-xl ${simpleMode ? 'p-3' : 'px-4 py-2'} mb-3 shadow-lg">
+                <div class="flex-shrink-0 smc-review-gradient text-white rounded-xl ${simpleMode ? 'p-3' : 'px-4 py-2'} mb-3 shadow-lg">
                     <div class="flex items-center justify-between flex-wrap gap-2">
                         <div class="flex items-center gap-2">
                             <h2 class="${simpleMode ? 'text-lg' : 'text-base'} font-bold">${simpleMode ? 'Review Scores' : 'Global Review'}</h2>
-                            ${!simpleMode ? `<span class="text-purple-300 text-xs hidden sm:inline">• Adjust scores to see impact</span>` : ''}
+                            ${!simpleMode ? `<span class="text-teal-200 text-xs hidden sm:inline">• Adjust scores to see impact</span>` : ''}
                         </div>
                         <div class="flex items-center gap-3">
                             <!-- Funding Recommendation (compact) -->
                             <div class="flex items-center gap-1.5 bg-white/10 rounded-md px-2 py-1">
-                                <svg class="w-3.5 h-3.5 ${impact.fundingClass === 'text-green-600' ? 'text-green-300' : impact.fundingClass === 'text-amber-600' ? 'text-amber-300' : impact.fundingClass === 'text-red-600' ? 'text-red-300' : 'text-blue-300'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-3.5 h-3.5 ${impact.fundingClass === 'text-green-600' ? 'text-green-300' : impact.fundingClass === 'text-amber-600' ? 'text-amber-300' : impact.fundingClass === 'text-red-600' ? 'text-red-300' : 'text-teal-300'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                                 <span class="font-medium text-xs">${impact.fundingRecommendation}</span>
@@ -7603,7 +7797,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                             <!-- Score Display -->
                             <div class="text-right">
                                 <div class="${simpleMode ? 'text-2xl' : 'text-xl'} font-bold leading-tight">${impact.totalScore} / ${impact.maxScore}</div>
-                                <div class="text-purple-200 text-[10px]">${impact.percentage}% score</div>
+                                <div class="text-teal-100 text-[10px]">${impact.percentage}% score</div>
                             </div>
                         </div>
                     </div>
@@ -7627,7 +7821,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                             const sectionPct = Math.round((sectionScore / sectionMax) * 100);
                             return `
                                 <div class="flex-1 bg-white/10 rounded-md px-2 py-1 text-center min-w-0">
-                                    <p class="text-[10px] text-purple-200 truncate">${sectionCriteria[0].sectionTitle}</p>
+                                    <p class="text-[10px] text-teal-100 truncate">${sectionCriteria[0].sectionTitle}</p>
                                     <p class="text-sm font-bold ${sectionPct >= 70 ? 'text-green-300' : sectionPct >= 50 ? 'text-amber-300' : 'text-red-300'}">${sectionScore}/${sectionMax}</p>
                                 </div>
                             `;
@@ -7676,7 +7870,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                     <!-- Compact Header -->
                                     <div class="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-200">
                                         <div class="flex items-center gap-2">
-                                            <span class="w-7 h-7 bg-blue-600 text-white rounded-lg flex items-center justify-center text-xs font-bold">${c.id.toUpperCase()}</span>
+                                            <span class="w-7 h-7 bg-[#38939B] text-white rounded-lg flex items-center justify-center text-xs font-bold">${c.id.toUpperCase()}</span>
                                             <p class="font-medium text-slate-800 text-sm">${c.question.substring(0, 60)}${c.question.length > 60 ? '...' : ''}</p>
                                         </div>
                                         <div class="flex items-center gap-2">
@@ -7690,7 +7884,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                             <div class="flex gap-1 flex-shrink-0">
                                                 ${c.validScores.map(score => `
                                                     <button onclick="updateGlobalScore('${c.id}', ${score})"
-                                                        class="w-9 h-9 rounded-lg font-bold text-sm border-2 transition-all ${currentScore === score ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}">
+                                                        class="w-9 h-9 rounded-lg font-bold text-sm border-2 transition-all ${currentScore === score ? 'bg-[#38939B] text-white border-[#38939B]' : 'bg-white text-slate-600 border-slate-200 hover:border-[#5bb5bd]'}">
                                                         ${score}
                                                     </button>
                                                 `).join('')}
@@ -7705,8 +7899,16 @@ Use numbers without formatting for monetary values. If not found, use null.`;
 
                                         <!-- AI Reasoning - Always Visible & Readable -->
                                         ${suggestion && suggestion.reasoning ? `
-                                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-3">
-                                                <p class="text-sm text-slate-700 leading-relaxed">${suggestion.reasoning}</p>
+                                            <div class="bg-[#F3FAFE] border border-[#B2D5EE] rounded-lg p-3 mb-3 ${regeneratingCriteria.has(c.id) ? 'opacity-50' : ''}">
+                                                <div class="flex items-start justify-between gap-2">
+                                                    <p class="text-sm text-slate-700 leading-relaxed flex-1">${regeneratingCriteria.has(c.id) ? '<span class="italic text-slate-500">Regenerating AI comment...</span>' : suggestion.reasoning}</p>
+                                                    <button onclick="regenerateComment('${c.id}')"
+                                                        class="flex-shrink-0 p-1.5 text-[#036CB6] hover:bg-[#036CB6]/10 rounded-lg transition-colors ${regeneratingCriteria.has(c.id) ? 'animate-spin' : ''}"
+                                                        title="Regenerate AI comment"
+                                                        ${regeneratingCriteria.has(c.id) ? 'disabled' : ''}>
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                    </button>
+                                                </div>
                                             </div>
                                         ` : ''}
 
@@ -7714,20 +7916,30 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                         <div class="border-t border-slate-100 pt-3">
                                             <div class="flex items-center justify-between mb-2">
                                                 <label class="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                                    Your Notes ${currentComment ? '<span class="text-blue-500">•</span>' : ''}
+                                                    Your Notes ${currentComment ? '<span class="text-[#38939B]">•</span>' : ''}
                                                 </label>
-                                                <button onclick="toggleNotesIncluded('${c.id}')"
-                                                    class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-all ${notesIncluded ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
-                                                    <span class="w-3 h-3 rounded-full border-2 flex items-center justify-center ${notesIncluded ? 'border-green-500 bg-green-500' : 'border-slate-400'}">
-                                                        ${notesIncluded ? '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>' : ''}
-                                                    </span>
-                                                    ${notesIncluded ? 'Include' : 'Exclude'}
-                                                </button>
+                                                <div class="flex items-center gap-1.5">
+                                                    ${currentComment ? `
+                                                        <button onclick="clearNotes('${c.id}')"
+                                                            class="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                                                            title="Clear notes">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                            Clear
+                                                        </button>
+                                                    ` : ''}
+                                                    <button onclick="toggleNotesIncluded('${c.id}')"
+                                                        class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-all ${notesIncluded ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
+                                                        <span class="w-3 h-3 rounded-full border-2 flex items-center justify-center ${notesIncluded ? 'border-green-500 bg-green-500' : 'border-slate-400'}">
+                                                            ${notesIncluded ? '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>' : ''}
+                                                        </span>
+                                                        ${notesIncluded ? 'Include' : 'Exclude'}
+                                                    </button>
+                                                </div>
                                             </div>
                                             <textarea id="comment-textarea-${c.id}"
                                                 onchange="updateGlobalComment('${c.id}', this.value)"
                                                 rows="3"
-                                                class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 resize-y transition-all ${notesIncluded ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 opacity-60'}"
+                                                class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-[#38939B] resize-y transition-all ${notesIncluded ? 'border-slate-200 bg-white text-slate-700' : 'border-slate-200/40 bg-slate-50/30 text-slate-400/60 hover:text-slate-500 hover:bg-slate-50 hover:border-slate-300 focus:text-slate-700 focus:bg-white focus:border-slate-300'}"
                                                 placeholder="Add your notes about this criterion...">${currentComment}</textarea>
                                         </div>
                                     </div>
@@ -7740,7 +7952,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                             <div class="global-review-card bg-white rounded-xl border ${hasChanged ? 'border-amber-300 ring-2 ring-amber-100' : 'border-slate-200'} shadow-sm overflow-hidden">
                                 <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
                                     <div class="flex items-center gap-3">
-                                        <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold">${c.id.toUpperCase()}</span>
+                                        <span class="w-8 h-8 bg-[#38939B] text-white rounded-lg flex items-center justify-center text-sm font-bold">${c.id.toUpperCase()}</span>
                                         <div>
                                             <p class="font-semibold text-slate-800 text-sm">${c.question.substring(0, 60)}${c.question.length > 60 ? '...' : ''}</p>
                                             <p class="text-xs text-slate-500">${c.sectionTitle} • Max ${c.validScores[c.validScores.length - 1]} pts</p>
@@ -7759,7 +7971,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                             <div class="flex gap-1">
                                                 ${c.validScores.map(score => `
                                                     <button onclick="updateGlobalScore('${c.id}', ${score})"
-                                                        class="w-10 h-10 rounded-lg font-bold text-sm border-2 transition-all ${currentScore === score ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}">
+                                                        class="w-10 h-10 rounded-lg font-bold text-sm border-2 transition-all ${currentScore === score ? 'bg-[#38939B] text-white border-[#38939B]' : 'bg-white text-slate-600 border-slate-200 hover:border-[#5bb5bd]'}">
                                                         ${score}
                                                     </button>
                                                 `).join('')}
@@ -7771,14 +7983,20 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                             ${suggestion ? `
                                                 <div class="mb-3 grid grid-cols-1 ${suggestion.counterScore !== undefined && suggestion.counterScore > suggestion.suggestedScore ? 'md:grid-cols-2' : ''} gap-2">
                                                     <!-- AI Recommendation -->
-                                                    <div class="bg-green-50 border border-green-200 rounded-lg p-2">
-                                                        <div class="flex items-center gap-2 mb-1">
+                                                    <div class="bg-green-50 border border-green-200 rounded-lg p-2 ${regeneratingCriteria.has(c.id) ? 'opacity-50' : ''}">
+                                                        <div class="flex items-center justify-between gap-2 mb-1">
                                                             <p class="text-xs font-bold ${suggestion.suggestedScore === currentScore ? 'text-green-700' : 'text-green-600'}">
-                                                                RECOMMEND: Score ${suggestion.suggestedScore}
-                                                                ${suggestion.suggestedScore === currentScore ? ' ✓' : ''}
+                                                                ${regeneratingCriteria.has(c.id) ? 'REGENERATING...' : `RECOMMEND: Score ${suggestion.suggestedScore}`}
+                                                                ${!regeneratingCriteria.has(c.id) && suggestion.suggestedScore === currentScore ? ' ✓' : ''}
                                                             </p>
+                                                            <button onclick="regenerateComment('${c.id}')"
+                                                                class="p-1 text-green-600 hover:bg-green-100 rounded transition-colors ${regeneratingCriteria.has(c.id) ? 'animate-spin' : ''}"
+                                                                title="Regenerate AI comment"
+                                                                ${regeneratingCriteria.has(c.id) ? 'disabled' : ''}>
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                            </button>
                                                         </div>
-                                                        <p class="text-xs text-green-800 line-clamp-2">${suggestion.reasoning?.substring(0, 100)}...</p>
+                                                        <p class="text-xs text-green-800 line-clamp-2">${regeneratingCriteria.has(c.id) ? '<span class="italic">Getting fresh AI analysis...</span>' : (suggestion.reasoning?.substring(0, 100) + '...')}</p>
                                                         <button onclick="acceptRecommendationForCriterion('${c.id}')" class="text-xs text-green-700 hover:text-green-900 font-medium mt-1">
                                                             ${suggestion.suggestedScore === currentScore ? 'Already selected' : 'Accept →'}
                                                         </button>
@@ -7812,18 +8030,28 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                                     <label class="flex items-center gap-2 text-xs font-medium ${!currentComment.trim() ? 'text-red-500' : 'text-slate-600'}">
                                                         YOUR NOTES ${!currentComment.trim() ? '<span class="text-red-500">*</span>' : '<span class="w-2 h-2 bg-green-500 rounded-full"></span>'}
                                                     </label>
-                                                    <button onclick="toggleNotesIncluded('${c.id}')"
-                                                        class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-all ${notesIncluded ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
-                                                        <span class="w-3 h-3 rounded-full border-2 flex items-center justify-center ${notesIncluded ? 'border-green-500 bg-green-500' : 'border-slate-400'}">
-                                                            ${notesIncluded ? '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>' : ''}
-                                                        </span>
-                                                        ${notesIncluded ? 'Include' : 'Exclude'}
-                                                    </button>
+                                                    <div class="flex items-center gap-1.5">
+                                                        ${currentComment.trim() ? `
+                                                            <button onclick="clearNotes('${c.id}')"
+                                                                class="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                                                                title="Clear notes">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                                Clear
+                                                            </button>
+                                                        ` : ''}
+                                                        <button onclick="toggleNotesIncluded('${c.id}')"
+                                                            class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-all ${notesIncluded ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
+                                                            <span class="w-3 h-3 rounded-full border-2 flex items-center justify-center ${notesIncluded ? 'border-green-500 bg-green-500' : 'border-slate-400'}">
+                                                                ${notesIncluded ? '<svg class="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>' : ''}
+                                                            </span>
+                                                            ${notesIncluded ? 'Include' : 'Exclude'}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <textarea id="comment-textarea-pro-${c.id}"
                                                     onchange="updateGlobalComment('${c.id}', this.value)"
                                                     rows="4"
-                                                    class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 resize-y min-h-[100px] transition-all ${!currentComment.trim() ? 'border-red-300 bg-red-50' : notesIncluded ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 opacity-60'}"
+                                                    class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-[#38939B] resize-y min-h-[100px] transition-all ${!currentComment.trim() ? 'border-red-300 bg-red-50 text-slate-700' : notesIncluded ? 'border-slate-200 bg-white text-slate-700' : 'border-slate-200/40 bg-slate-50/30 text-slate-400/60 hover:text-slate-500 hover:bg-slate-50 hover:border-slate-300 focus:text-slate-700 focus:bg-white focus:border-slate-300'}"
                                                     placeholder="Add your notes explaining this score...">${currentComment}</textarea>
                                             </div>
                                         </div>
@@ -7831,7 +8059,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                         <!-- View Evidence Button -->
                                         <div class="flex-shrink-0">
                                             ${suggestion?.relevantExcerpts?.length ? `
-                                                <button onclick="showEvidenceForCriterion('${c.id}')" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View evidence in document">
+                                                <button onclick="showEvidenceForCriterion('${c.id}')" class="p-2 text-slate-400 hover:text-[#036CB6] hover:bg-[#E3EDF5] rounded-lg transition-colors" title="View evidence in document">
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                 </button>
                                             ` : ''}
@@ -7845,10 +8073,10 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                 </div>
                 <!-- END SCROLLABLE CONTENT AREA -->
 
-                <!-- STICKY FOOTER NAVIGATION -->
-                <div class="flex-shrink-0 pt-4 border-t border-slate-200 bg-slate-50 -mx-4 px-4 -mb-4 pb-4 rounded-b-2xl">
+                <!-- STICKY FOOTER NAVIGATION (v7.21 - Fixed visibility) -->
+                <div class="flex-shrink-0 pt-3 pb-3 px-4 mt-2 border-t border-slate-200 bg-slate-50 rounded-xl shadow-lg">
                     <div class="flex items-center justify-between">
-                    <button onclick="goBack()" class="px-6 py-3 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-2">
+                    <button onclick="goBack()" class="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-100 transition-colors flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         Back
                     </button>
@@ -7858,7 +8086,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                 Reset to AI Recommendations
                             </button>
                         ` : ''}
-                        <button onclick="proceedFromGlobalReview()" class="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-2">
+                        <button onclick="proceedFromGlobalReview()" class="px-6 py-2.5 bg-gradient-to-r from-[#38939B] to-[#036CB6] text-white font-semibold rounded-xl hover:from-[#2a7078] hover:to-[#02538C] transition-all shadow-lg hover:shadow-xl flex items-center gap-2">
                             ${simpleMode ? 'Finish' : 'Continue to Recommendation'}
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </button>
@@ -7869,10 +8097,42 @@ Use numbers without formatting for monetary values. If not found, use null.`;
         `;
     }
 
-    function updateGlobalScore(criterionId, score) {
+    function updateGlobalScore(criterionId, score, skipHistory = false) {
+        const oldScore = state.scores[criterionId];
+
+        // Track in history for undo (unless skipping, e.g., during undo itself)
+        if (!skipHistory && oldScore !== undefined && oldScore !== score) {
+            state.scoreHistory.push({
+                criterionId,
+                oldScore,
+                newScore: score,
+                timestamp: Date.now()
+            });
+            // Keep only last 50 changes
+            if (state.scoreHistory.length > 50) {
+                state.scoreHistory.shift();
+            }
+        }
+
         state.scores[criterionId] = score;
         debouncedAutoSave();
+        updateUndoButton(); // Show/hide undo button based on history (v7.21)
         render();
+    }
+
+    // Undo the last score change (v7.21)
+    function undoLastScoreChange() {
+        if (!state.scoreHistory || state.scoreHistory.length === 0) {
+            showToast('info', 'Nothing to Undo', 'No recent score changes to undo.');
+            return;
+        }
+
+        const lastChange = state.scoreHistory.pop();
+        updateGlobalScore(lastChange.criterionId, lastChange.oldScore, true); // skipHistory=true
+        updateUndoButton(); // Update button visibility after undo (v7.21)
+
+        const criterion = CRITERIA.find(c => c.id === lastChange.criterionId);
+        showToast('success', 'Undo Successful', `${criterion?.id.toUpperCase() || lastChange.criterionId}: Score reverted from ${lastChange.newScore} to ${lastChange.oldScore}`);
     }
 
     function updateGlobalComment(criterionId, comment) {
@@ -7896,6 +8156,79 @@ Use numbers without formatting for monetary values. If not found, use null.`;
         });
         debouncedAutoSave();
         render();
+    }
+
+    // Track which criteria are currently regenerating (v7.21)
+    const regeneratingCriteria = new Set();
+
+    // Regenerate AI comment for a specific criterion (v7.21)
+    async function regenerateComment(criterionId) {
+        const criterion = CRITERIA.find(c => c.id === criterionId);
+        if (!criterion) return;
+
+        // Prevent double-clicks while already regenerating
+        if (regeneratingCriteria.has(criterionId)) {
+            showToast('info', 'Please Wait', 'Already regenerating this comment...');
+            return;
+        }
+
+        // Check for API key
+        if (!state.apiKey) {
+            showToast('error', 'No API Key', 'Please set your API key in settings first.');
+            return;
+        }
+
+        // Check for application text (use applicationText, not documentText)
+        if (!state.applicationText || state.applicationText.length === 0) {
+            showToast('error', 'No Document', 'Please upload an application document first to regenerate comments.');
+            return;
+        }
+
+        // Set loading state and re-render to show spinner
+        regeneratingCriteria.add(criterionId);
+        render();
+
+        showToast('info', 'Regenerating...', `Getting fresh AI analysis for ${criterion.id.toUpperCase()}`);
+
+        // Clear the cache for this criterion to force a fresh call
+        clearCacheForCriterion(criterionId);
+
+        try {
+            // Re-analyze this criterion using getAISuggestion (which handles all the hashing/caching)
+            const result = await getAISuggestion(criterion);
+
+            if (result) {
+                // Update the suggestion
+                state.aiSuggestions[criterionId] = result;
+
+                // Auto-populate the notes field with the new AI reasoning + evidence
+                let comment = result.reasoning || '';
+                if (result.relevantExcerpts?.length) {
+                    comment += '\n\nEvidence: ' + result.relevantExcerpts.map(e => '"' + e + '"').join('; ');
+                }
+                state.comments[criterionId] = comment;
+
+                debouncedAutoSave();
+                showToast('success', 'Regenerated', `Fresh AI comment for ${criterion.id.toUpperCase()}`);
+            } else {
+                showToast('error', 'Failed', 'Could not regenerate comment. Please try again.');
+            }
+        } catch (error) {
+            console.error('Regenerate error:', error);
+            showToast('error', 'Error', error.message || 'Failed to regenerate comment');
+        } finally {
+            // Clear loading state and re-render
+            regeneratingCriteria.delete(criterionId);
+            render();
+        }
+    }
+
+    // Clear notes for a specific criterion (v7.21)
+    function clearNotes(criterionId) {
+        state.comments[criterionId] = '';
+        debouncedAutoSave();
+        render();
+        showToast('info', 'Notes Cleared', `Notes for ${criterionId.toUpperCase()} have been cleared.`);
     }
 
     function toggleCommentExpand(criterionId) {
@@ -7948,7 +8281,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                 <div class="p-6 overflow-y-auto flex-1">
                     <!-- Score Badge -->
                     <div class="flex items-center gap-3 mb-4">
-                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                        <span class="px-3 py-1 bg-[#E3EDF5] text-[#02538C] rounded-full text-sm font-semibold">
                             AI Suggested Score: ${suggestion.suggestedScore}
                         </span>
                         <span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs">
@@ -7959,10 +8292,10 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                     <!-- Reasoning Section -->
                     <div class="mb-6">
                         <h4 class="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <svg class="w-4 h-4 text-[#036CB6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             AI Reasoning
                         </h4>
-                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <div class="bg-[#F3FAFE] border border-[#7CBEEC] rounded-xl p-4">
                             <p class="text-sm text-slate-700 leading-relaxed">${suggestion.reasoning || 'No reasoning provided.'}</p>
                         </div>
                     </div>
@@ -8003,7 +8336,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                     ${buildDocumentRecommendationsHTML(criterionId)}
                 </div>
                 <div class="p-4 border-t border-slate-200 bg-slate-50">
-                    <button onclick="document.getElementById('evidenceModal').remove(); showPdfViewer('Full Document', ${JSON.stringify(suggestion.relevantExcerpts || []).replace(/"/g, '&quot;')}, true, '${criterionId}')" class="w-full px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
+                    <button onclick="document.getElementById('evidenceModal').remove(); showPdfViewer('Full Document', ${JSON.stringify(suggestion.relevantExcerpts || []).replace(/"/g, '&quot;')}, true, '${criterionId}')" class="w-full px-4 py-2 bg-[#38939B] text-white rounded-xl hover:bg-[#2a7078] transition-colors">
                         Open Document Viewer
                     </button>
                 </div>
@@ -8192,7 +8525,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
     async function requestAISuggestion() {
         const criterion = CRITERIA[state.currentCriterionIndex];
         const area = document.getElementById('aiSuggestionArea');
-        area.innerHTML = `<div class="ai-thinking rounded-xl p-4"><div class="flex items-center gap-3"><div class="typing-indicator flex gap-1"><span class="w-2 h-2 bg-blue-600 rounded-full"></span><span class="w-2 h-2 bg-blue-600 rounded-full"></span><span class="w-2 h-2 bg-blue-600 rounded-full"></span></div><span class="text-blue-800 font-medium">Analyzing application...</span></div></div>`;
+        area.innerHTML = `<div class="ai-thinking rounded-xl p-4"><div class="flex items-center gap-3"><div class="typing-indicator flex gap-1"><span class="w-2 h-2 bg-[#38939B] rounded-full"></span><span class="w-2 h-2 bg-[#38939B] rounded-full"></span><span class="w-2 h-2 bg-[#38939B] rounded-full"></span></div><span class="text-[#02538C] font-medium">Analyzing application...</span></div></div>`;
         const suggestion = await getAISuggestion(criterion);
         if (suggestion) {
             state.aiSuggestions[criterion.id] = suggestion;
@@ -8266,7 +8599,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
         let recommendationStrength = '';
         let strengthColor = '';
         if (percentage >= 75) { recommendationStrength = 'Strong Candidate'; strengthColor = 'text-green-600'; }
-        else if (percentage >= 60) { recommendationStrength = 'Good Candidate'; strengthColor = 'text-blue-600'; }
+        else if (percentage >= 60) { recommendationStrength = 'Good Candidate'; strengthColor = 'text-[#036CB6]'; }
         else if (percentage >= 45) { recommendationStrength = 'Marginal Candidate'; strengthColor = 'text-amber-600'; }
         else { recommendationStrength = 'Weak Candidate'; strengthColor = 'text-red-600'; }
 
@@ -8308,7 +8641,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                             <div class="flex items-center gap-2 mb-2">
                                 <label class="block text-sm font-medium text-slate-700" for="fundingSource">Recommended Funding Source *</label>
                                 <div class="relative group">
-                                    <button type="button" class="text-slate-400 hover:text-blue-600 transition-colors" aria-label="Help - Where to find funding source">
+                                    <button type="button" class="text-slate-400 hover:text-[#036CB6] transition-colors" aria-label="Help - Where to find funding source">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
@@ -8331,7 +8664,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                 </div>
                             </div>
                             <div class="flex gap-2">
-                                <select id="fundingSource" class="flex-1 px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" aria-required="true">
+                                <select id="fundingSource" class="flex-1 px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#38939B] focus:border-[#38939B]" aria-required="true">
                                     <option value="">Select funding source...</option>
                                     <option value="HOME" ${state.recommendation.fundingSource === 'HOME' ? 'selected' : ''}>HOME</option>
                                     <option value="CDBG" ${state.recommendation.fundingSource === 'CDBG' ? 'selected' : ''}>CDBG</option>
@@ -8339,20 +8672,20 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                                     <option value="Other" ${state.recommendation.fundingSource === 'Other' ? 'selected' : ''}>Other</option>
                                     <option value="None" ${state.recommendation.fundingSource === 'None' ? 'selected' : ''}>Do Not Recommend</option>
                                 </select>
-                                <button onclick="applyDetectedFundingSource()" id="applyFundingSourceBtn" class="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-xl flex items-center gap-1 transition-colors ${state.projectInfo.detectedFundingSource ? '' : 'hidden'}" title="Apply AI-detected funding source">
+                                <button onclick="applyDetectedFundingSource()" id="applyFundingSourceBtn" class="px-3 py-2 bg-[#E3EDF5] hover:bg-[#B2D5EE] text-[#036CB6] rounded-xl flex items-center gap-1 transition-colors ${state.projectInfo.detectedFundingSource ? '' : 'hidden'}" title="Apply AI-detected funding source">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                     Apply AI Suggestion
                                 </button>
                             </div>
                             ${state.projectInfo.detectedFundingSource ? `
-                            <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="mt-2 p-3 bg-[#F3FAFE] border border-[#7CBEEC] rounded-lg">
                                 <div class="flex items-start gap-2">
-                                    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 text-[#036CB6] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                                     </svg>
                                     <div class="flex-1">
-                                        <p class="text-sm font-medium text-blue-800">AI Detected: <span class="font-bold">${state.projectInfo.detectedFundingSource}</span></p>
-                                        <p class="text-xs text-blue-600 mt-1">${state.projectInfo.fundingSourceReasoning || 'Based on application content analysis'}</p>
+                                        <p class="text-sm font-medium text-[#02538C]">AI Detected: <span class="font-bold">${state.projectInfo.detectedFundingSource}</span></p>
+                                        <p class="text-xs text-[#036CB6] mt-1">${state.projectInfo.fundingSourceReasoning || 'Based on application content analysis'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -8408,7 +8741,7 @@ Use numbers without formatting for monetary values. If not found, use null.`;
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                             Generate All with AI
                         </button>
-                        <button onclick="handleRecommendationNext()" class="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl">
+                        <button onclick="handleRecommendationNext()" class="px-8 py-3 bg-gradient-to-r from-[#38939B] to-[#036CB6] text-white font-semibold rounded-xl hover:from-[#2a7078] hover:to-[#02538C] transition-all shadow-lg hover:shadow-xl">
                             Review Summary
                             <svg class="w-5 h-5 inline ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </button>
@@ -8823,7 +9156,7 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
             <div class="mb-3 flex items-center justify-between">
                 <span class="text-xs text-slate-500">${selectedCount} of ${questions.length} questions selected</span>
                 <div class="flex gap-2">
-                    <button onclick="toggleAllQuestions(true)" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors">
+                    <button onclick="toggleAllQuestions(true)" class="text-xs px-2 py-1 bg-[#E3EDF5] hover:bg-[#B2D5EE] text-[#036CB6] rounded transition-colors">
                         Select All
                     </button>
                     <button onclick="toggleAllQuestions(false)" class="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors">
@@ -8978,7 +9311,7 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
         container.innerHTML = `
             <div class="max-w-5xl mx-auto flex flex-col" style="height: calc(100vh - 180px);">
                 <!-- STICKY HEADER -->
-                <div class="flex-shrink-0 bg-gradient-to-r from-blue-900 via-indigo-800 to-purple-900 text-white rounded-2xl p-4 mb-4 shadow-xl">
+                <div class="flex-shrink-0 smc-header-gradient text-white rounded-2xl p-4 mb-4 shadow-xl">
                     <div class="flex items-center justify-between flex-wrap gap-3">
                         <div class="flex items-center gap-3">
                             <button onclick="goBack()" class="p-2 hover:bg-white/10 rounded-lg transition-colors" aria-label="Go back">
@@ -8986,7 +9319,7 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
                             </button>
                             <div>
                                 <h2 class="text-xl font-bold">Evaluation Summary</h2>
-                                <p class="text-blue-200 text-sm">Review before exporting • Click any score to edit</p>
+                                <p class="text-teal-200 text-sm">Review before exporting • Click any score to edit</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-4">
@@ -8995,7 +9328,7 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
                             </div>
                             <div class="text-right">
                                 <div class="text-2xl font-bold">${totalScore} / ${maxScore}</div>
-                                <div class="text-blue-200 text-sm">${percentage}% score</div>
+                                <div class="text-teal-200 text-sm">${percentage}% score</div>
                             </div>
                         </div>
                     </div>
@@ -9047,9 +9380,9 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
                     <h3 class="font-semibold text-slate-800 mb-4">Recommendation</h3>
 
                     <!-- Funding Source - Compact Card -->
-                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100 mb-4">
-                        <p class="text-xs text-blue-600 uppercase tracking-wide font-medium mb-1">Funding Source</p>
-                        <p class="text-lg font-bold text-blue-800">${state.recommendation.fundingSource || 'Not specified'}</p>
+                    <div class="bg-gradient-to-br from-[#F3FAFE] to-[#E3EDF5] rounded-xl p-4 border border-[#B2D5EE] mb-4">
+                        <p class="text-xs text-[#036CB6] uppercase tracking-wide font-medium mb-1">Funding Source</p>
+                        <p class="text-lg font-bold text-[#02538C]">${state.recommendation.fundingSource || 'Not specified'}</p>
                     </div>
 
                     <!-- Summary Comments - Selectable Paragraphs -->
@@ -9088,7 +9421,7 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-slate-600">
-                                Exporting as: <span class="font-semibold ${state.reviewerSheet.includes('Reviewer 1') ? 'text-blue-600' : 'text-green-600'}">
+                                Exporting as: <span class="font-semibold ${state.reviewerSheet.includes('Reviewer 1') ? 'text-[#036CB6]' : 'text-green-600'}">
                                     ${REVIEWER_SHEETS[state.reviewerSheet]?.name || 'Unknown'} - ${REVIEWER_SHEETS[state.reviewerSheet]?.description || ''}
                                 </span>
                             </p>
@@ -9096,11 +9429,11 @@ Format each question on its own numbered line (1., 2., 3., 4., 5.). Be specific 
                                 Tab: "${state.reviewerSheet}" • Scores and comments will be written to this sheet
                             </p>
                             ${REVIEWER_SHEETS[state.reviewerSheet]?.hasThreshold ?
-                                '<p class="text-xs text-blue-600 mt-1 font-medium">Note: As Reviewer 1, you are also responsible for Threshold evaluation (pass/fail eligibility)</p>' :
+                                '<p class="text-xs text-[#036CB6] mt-1 font-medium">Note: As Reviewer 1, you are also responsible for Threshold evaluation (pass/fail eligibility)</p>' :
                                 '<p class="text-xs text-green-600 mt-1 font-medium">Note: Threshold evaluation was completed by Reviewer 1</p>'
                             }
                         </div>
-                        <button onclick="showSettings()" class="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                        <button onclick="showSettings()" class="px-4 py-2 text-[#036CB6] hover:bg-[#E3EDF5] rounded-lg transition-colors">
                             Change
                         </button>
                     </div>
