@@ -6688,6 +6688,12 @@ Use numbers without formatting for monetary values. If not found, use null.`;
     // Direct render without debouncing (for initial load)
     function renderImmediate() {
         const main = document.getElementById('mainContent');
+
+        // Save scroll position before re-render (v7.21 - prevent jump during auto-analyze)
+        const scrollableArea = main.querySelector('.overflow-y-auto');
+        const savedScrollTop = scrollableArea ? scrollableArea.scrollTop : 0;
+        const savedStep = state.currentStep;
+
         switch (state.currentStep) {
             case 'upload':
                 // Use simple upload if in simple mode (v7.21)
@@ -6702,6 +6708,17 @@ Use numbers without formatting for monetary values. If not found, use null.`;
             case 'recommendation': renderRecommendationStep(main); break;
             case 'summary': renderSummaryStep(main); break;
         }
+
+        // Restore scroll position after re-render if still on same step (v7.21)
+        if (savedStep === state.currentStep && savedScrollTop > 0) {
+            requestAnimationFrame(() => {
+                const newScrollableArea = main.querySelector('.overflow-y-auto');
+                if (newScrollableArea) {
+                    newScrollableArea.scrollTop = savedScrollTop;
+                }
+            });
+        }
+
         setTimeout(setupDropZones, 100);
         updateAutoAnalyzeButton();
     }
