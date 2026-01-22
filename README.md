@@ -15,7 +15,8 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 **How to use:**
 1. Click the download link above
 2. Open the downloaded `NOFA_AI_Evaluator_v7.21.html` file in your browser (double-click it)
-3. That's it! The tool runs entirely in your browser
+3. Enter your Anthropic API key (see [Getting Your API Key](#getting-your-anthropic-api-key) below)
+4. That's it! The tool runs entirely in your browser
 
 > 💡 **Tip**: Save the file somewhere easy to find (like your Desktop) for quick access.
 
