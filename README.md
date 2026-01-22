@@ -48,7 +48,7 @@ This tool uses Claude AI from Anthropic to analyze grant applications. You'll ne
 
 ### 🏢 For Agency/Team Use
 
-If your organization (e.g., [San Mateo County Department of Housing](https://www.smcgov.org/housing/hcdc)) has already set up an Anthropic account, your administrator will provide you with a shared API key. Simply skip to Step 4 below and enter the key provided by your admin. All usage will be billed to your agency's account.
+If your organization (e.g., San Mateo County Housing and Community Development) has already set up an Anthropic account, your administrator will provide you with a shared API key. Simply skip to Step 4 below and enter the key provided by your admin. All usage will be billed to your agency's account.
 
 ### For Individual Setup or Administrators:
 
