@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>NOFA AI Evaluator - Grant Application Review Tool</title>
+      <style>
+                * {
+                              margin: 0;
+                              padding: 0;
+                              box-sizing: border-box;
+                }
+                body {
+                              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+                              line-height: 1.6;
+                              color: #333;
+                              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                              min-height: 100vh;
+                }
+                .hero {
+                              text-align: center;
+                              padding: 60px 20px;
+                              color: white;
+                }
+                .hero h1 {
+                              font-size: 3rem;
+                              margin-bottom: 20px;
+                              text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                }
+                .hero p {
+                              font-size: 1.3rem;
+                              max-width: 700px;
+                              margin: 0 auto 30px;
+                              opacity: 0.95;
+                }
+                .download-btn {
+                              display: inline-block;
+                              background: #28a745;
+                              color: white;
+                              padding: 15px 40px;
+                              font-size: 1.2rem;
+                              border-radius: 8px;
+                              text-decoration: none;
+                              transition: transform 0.2s, box-shadow 0.2s;
+                              box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                }
+                .download-btn:hover {
+                              transform: translateY(-2px);
+                              box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                }
+                .container {
+                              max-width: 1000px;
+                              margin: 0 auto;
+                              padding: 40px 20px;
+                }
+                .card {
+                              background: white;
+                              border-radius: 12px;
+                              padding: 40px;
+                              margin-bottom: 30px;
+                              box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+                }
+                .card h2 {
+                              color: #667eea;
+                              margin-bottom: 20px;
+                              font-size: 1.8rem;
+                }
+                .benefits-grid {
+                              display: grid;
+                              grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                              gap: 20px;
+                              margin-top: 20px;
+                }
+                .benefit-item {
+                              background: #f8f9fa;
+                              padding: 20px;
+                              border-radius: 8px;
+                              border-left: 4px solid #667eea;
+                }
+                .benefit-item h3 {
+                              color: #333;
+                              margin-bottom: 8px;
+                }
+                .steps {
+                              counter-reset: step-counter;
+                }
+                .step {
+                              display: flex;
+                              align-items: flex-start;
+                              margin-bottom: 15px;
+                              padding: 15px;
+                              background: #f8f9fa;
+                              border-radius: 8px;
+                }
+                .step::before {
+                              counter-increment: step-counter;
+                              content: counter(step-counter);
+                              background: #667eea;
+                              color: white;
+                              width: 30px;
+                              height: 30px;
+                              border-radius: 50%;
+                              display: flex;
+                              align-items: center;
+                              justify-content: center;
+                              margin-right: 15px;
+                              flex-shrink: 0;
+                              font-weight: bold;
+                }
+                .footer {
+                              text-align: center;
+                              padding: 30px;
+                              color: white;
+                }
+                .footer a {
+                              color: white;
+                              text-decoration: underline;
+                }
+                .version-badge {
+                              display: inline-block;
+                              background: rgba(255,255,255,0.2);
+                              padding: 5px 15px;
+                              border-radius: 20px;
+                              font-size: 0.9rem;
+                              margin-bottom: 20px;
+                }
+            </style>
+  </head>
+  <body>
+        <div class="hero">
+                  <span class="version-badge">v7.21 - Latest Release</span>span>
+                  <h1>NOFA AI Evaluator</h1>
+                <p>A browser-based tool that helps staff evaluate grant applications faster and more consistently. Runs entirely on your computer with no external servers, keeping all data secure.</p>
+                <a href="https://github.com/bbuxton0823/nofa_ai_analyzer/releases/latest" class="download-btn">Download Now</a>a>
+        </div>div>
+  
+      <div class="container">
+              <div class="card">
+                          <h2>Why This Tool?</h2>
+                          <div class="benefits-grid">
+                                          <div class="benefit-item">
+                                                              <h3>Increase Capacity</h3>
+                                                              <p>Review more applications that serve our community</p>
+                                          </div>div>
+                                          <div class="benefit-item">
+                                                              <h3>Improve Consistency</h3>
+                                                              <p>Same criteria applied fairly to every application</p>
+                                          </div>div>
+                                          <div class="benefit-item">
+                                                              <h3>Save Time</h3>
+                                                              <p>Reduce manual data entry and repetitive analysis</p>
+                                          </div>div>
+                                          <div class="benefit-item">
+                                                              <h3>Focus on What Matters</h3>
+                                                              <p>More time for judgment calls, less on paperwork</p>
+                                          </div>div>
+                          </div>div>
+              </div>div>
+      
+              <div class="card">
+                          <h2>Quick Start</h2>
+                          <div class="steps">
+                                          <div class="step">
+                                                              <div><strong>Open the Application:</strong> Double-click NOFA_AI_Evaluator_v7.21.html</div>
+                                          </div>
+                                          <div class="step">
+                                                              <div><strong>Load a Template:</strong> Upload your Excel scoring template</div>
+                                          </div>
+                                          <div class="step">
+                                                              <div><strong>Enter Application:</strong> Paste or type the application text</div>
+                                          </div>
+                                          <div class="step">
+                                                              <div><strong>Run Evaluation:</strong> Click "Start Evaluation"</div>
+                                          </div>
+                                          <div class="step">
+                                                              <div><strong>Review & Export:</strong> Check scores, make adjustments, export results</div>
+                                          </div>
+                          </div>
+              </div>
+      
+              <div class="card">
+                          <h2>Key Benefits</h2>
+                          <table style="width:100%; border-collapse: collapse;">
+                                          <tr style="background:#667eea; color:white;">
+                                              <th style="padding:12px; text-align:left;">Benefit</th>th>
+                                              <th style="padding:12px; text-align:left;">What It Means</th>th>
+                                          </tr>tr>
+                                          <tr style="background:#f8f9fa;">
+                                              <td style="padding:12px;">Faster Reviews</td>td>
+                                              <td style="padding:12px;">What took hours now takes minutes</td>td>
+                                          </tr>tr>
+                                          <tr>
+                                                                <td style="padding:12px;">Fair Scoring</td>td>
+                                                                <td style="padding:12px;">Every application evaluated by the same standards</td>td>
+                                          </tr>
+                                            <tr style="background:#f8f9fa;">
+                                                                  <td style="padding:12px;">Complete Records</td>td>
+                                                                  <td style="padding:12px;">Automatic documentation of all evaluations</td>td>
+                                            </tr>
+                                            <tr>
+                                                                  <td style="padding:12px;">No Learning Curve</td>td>
+                                                                  <td style="padding:12px;">Simple interface anyone can use in minutes</td>td>
+                                            </tr>
+                          </table>table>
+              </div>
+      </div>
+
+        <div class="footer">
+                  <p>View the full documentation and source code on <a href="https://github.com/bbuxton0823/nofa_ai_analyzer">GitHub</a>a></p>
+                <p style="margin-top:10px; opacity:0.8;">No installation required - just download and open in your browser</p>
+        </div>
+  </body>
+</html>html></p>
+                                            </tr>
+                                          </tr></h2></strong></strong></div></p></p></h1>
+  </body>
+      </style></title>
+  </head>
