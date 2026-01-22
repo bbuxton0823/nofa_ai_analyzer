@@ -1,6 +1,6 @@
 # NOFA AI Evaluator
 
-A browser-based tool that helps staff evaluate grant applications faster and more consistently. Runs entirely on your computer with no external servers, keeping all data secure. AI assists with analysis but staff always make the final decisions.
+A browser-based tool that helps staff evaluate grant applications faster and more consistently. Runs entirely on your computer with no external servers, keeping all data secure.
 
 ![NOFA AI Evaluator Demo](demo.gif)
 
@@ -19,25 +19,18 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 
 > 💡 **Tip**: Save the file somewhere easy to find (like your Desktop) for quick access.
 
-> 🔐 **For Teams**: Administrators can pre-configure an API key before distributing. See [Administrator Setup](#administrator-setup) below.
-
 ---
 
 ## Why This Tool?
 
-- **Increase Capacity**: Review more applications that serve our community
-- **Improve Consistency**: Same criteria applied fairly to every application
-- **Save Time**: Reduce manual data entry and repetitive analysis
-- **Focus on What Matters**: More time for judgment calls, less on paperwork
-
-## Key Benefits
-
 | Benefit | What It Means |
 |---------|---------------|
-| Faster Reviews | What took hours now takes minutes |
-| Fair Scoring | Every application evaluated by the same standards |
-| Complete Records | Automatic documentation of all evaluations |
-| No Learning Curve | Simple interface anyone can use in minutes |
+| **Increase Capacity** | Review more applications that serve our community |
+| **Improve Consistency** | Same criteria applied fairly to every application |
+| **Save Time** | Reduce manual data entry and repetitive analysis |
+| **Focus on What Matters** | More time for judgment calls, less on paperwork |
+
+---
 
 ## Quick Start
 
@@ -46,6 +39,96 @@ A browser-based tool that helps staff evaluate grant applications faster and mor
 3. **Enter Application**: Paste or type the application text
 4. **Run Evaluation**: Click "Start Evaluation"
 5. **Review & Export**: Check scores, make adjustments, export results
+
+---
+
+## Getting Your Anthropic API Key
+
+This tool uses Claude AI from Anthropic to analyze grant applications. You'll need an API key to get started. Your API key is stored locally in your browser and is only sent directly to Anthropic's servers.
+
+### 🏢 For Agency/Team Use
+
+If your organization (e.g., [San Mateo County Department of Housing](https://www.smcgov.org/housing/hcdc)) has already set up an Anthropic account, your administrator will provide you with a shared API key. Simply skip to Step 4 below and enter the key provided by your admin. All usage will be billed to your agency's account.
+
+### For Individual Setup or Administrators:
+
+1. **Create an Anthropic Account**: Go to [console.anthropic.com](https://console.anthropic.com/) and sign up. You'll need to verify your phone number.
+2. **Set Up Billing**: Navigate to [Billing Settings](https://console.anthropic.com/settings/billing) to add a payment method and purchase credits. We recommend starting with $5-10 for testing, or more for team usage.
+3. **Create an API Key**: Go to [API Keys](https://console.anthropic.com/settings/keys), click "Create Key", give it a name (e.g., "NOFA Evaluator - County Team"), and copy the key.
+4. **Enter in the Tool**: Open the NOFA AI Evaluator, click "Settings", and paste your API key in the "Anthropic API Key" field.
+
+> 💡 **Important**: Your API key starts with "sk-ant-" and should be kept private within your organization. The API will not work until the account has credits — billing must be set up first!
+
+---
+
+## Administrator Setup
+
+To pre-configure a shared API key for your team (so staff don't need to configure anything):
+
+1. Download the `NOFA_AI_Evaluator_v7.21.html` file
+2. Open it in a text editor (Notepad, VS Code, etc.)
+3. Search for `SHARED_API_KEY`
+4. Replace the empty quotes with your API key:
+   ```javascript
+   const SHARED_API_KEY = 'sk-ant-api03-your-key-here';
+   ```
+5. Save the file and distribute to your team via shared drive, email, or intranet
+
+> **Note**: Users can still override this key in Settings if needed. Keep the pre-configured file internal to your organization.
+
+---
+
+## Security & Privacy
+
+Your data security is our top priority. This tool was designed from the ground up with privacy in mind.
+
+| Feature | Description |
+|---------|-------------|
+| **🔒 100% Local Processing** | The entire application runs in your browser. No data is ever sent to our servers because we don't have any servers. Your files never leave your computer. |
+| **🔐 Secure API Communication** | Your API key and application data are sent directly to Anthropic's secure servers using encrypted HTTPS connections. We never see or store this information. |
+| **💾 Local Storage Only** | Your API key is stored in your browser's local storage on your device. It never travels through any third-party servers or cloud services. |
+| **👁️ Full Transparency** | This is open-source software. You can inspect every line of code on GitHub to verify exactly how your data is handled. |
+
+### What This Means For You
+
+- **Grant applications stay private** — Sensitive applicant information never touches external servers except Anthropic's AI
+- **No data collection** — We don't track usage, collect analytics, or store any information about you or your work
+- **You control your API key** — Clear it anytime from Settings, and you can revoke it from your Anthropic console
+- **Offline capable** — The application itself works offline; only AI evaluation requires an internet connection
+
+### Best Practices
+
+- Never share your API key or commit it to version control
+- Regularly rotate your API key from the Anthropic console
+- Set spending limits in your Anthropic account to control costs
+- Use a dedicated API key for this tool (don't reuse keys across applications)
+
+---
+
+## You Are Always in Control
+
+**Human-in-the-Loop**: The AI assists, but YOU decide.
+
+- **Review Every Score**: All AI-generated scores are visible and can be adjusted
+- **Read the Reasoning**: AI explains why it assigned each score
+- **Override Anytime**: Change any score with a single click
+- **Final Approval**: Nothing is submitted or finalized without your explicit action
+
+---
+
+## What AI Does vs. Does NOT Do
+
+| What AI Does | What AI Does NOT Do |
+|--------------|---------------------|
+| Reads and analyzes text | Make final funding decisions |
+| Analyzes charts, graphs, and tables (with Vision enabled) | Override your judgment |
+| Extracts and analyzes linked supporting documents | Store or share your data |
+| Detects and suggests appropriate funding source | Submit anything automatically |
+| Applies consistent criteria | Replace human expertise |
+| Explains its reasoning | |
+| Suggests scores for review | |
+
+---
 
 ## Cost & ROI Analysis
 
@@ -64,41 +147,16 @@ The tool itself is free. The only cost is AI API usage (Claude Sonnet 4).
 
 *Based on Claude Sonnet 4 pricing: $3/M input tokens, $15/M output tokens*
 
-### Volume Pricing
-
-| Applications | Estimated Cost | Cost per App |
-|--------------|----------------|--------------|
-| 25 | $12 - $19 | $0.48 - $0.76 |
-| 50 | $23 - $38 | $0.46 - $0.76 |
-| 100 | $45 - $75 | $0.45 - $0.75 |
-
-### Time Savings Analysis
+### Time Savings
 
 | Task | Manual Time | With AI Tool | Time Saved |
 |------|-------------|--------------|------------|
-| Read full application | 15 min | 2 min (AI extracts key info) | 13 min |
-| Review linked documents | 20 min | 3 min (auto-fetched & analyzed) | 17 min |
-| Score 15 criteria | 25 min | 5 min (review AI suggestions) | 20 min |
-| Write justifications | 15 min | 3 min (edit AI reasoning) | 12 min |
-| Cross-reference priorities | 10 min | 0 min (automatic) | 10 min |
+| Read full application | 15 min | 2 min | 13 min |
+| Review linked documents | 20 min | 3 min | 17 min |
+| Score 15 criteria | 25 min | 5 min | 20 min |
+| Write justifications | 15 min | 3 min | 12 min |
+| Cross-reference priorities | 10 min | 0 min | 10 min |
 | **Total per Application** | **85 min** | **13 min** | **72 min (85%)** |
-
-### ROI Calculation
-
-**Assumptions:**
-- Staff hourly rate (fully loaded): $75/hour
-- Applications per NOFA cycle: 50
-- Manual review time: 85 minutes/application
-- AI-assisted review time: 13 minutes/application
-
-| Metric | Manual Process | With AI Tool | Savings |
-|--------|----------------|--------------|---------|
-| Time per application | 85 min | 13 min | 72 min |
-| Total time (50 apps) | 70.8 hours | 10.8 hours | 60 hours |
-| Staff cost (50 apps) | $5,310 | $810 | $4,500 |
-| API cost (50 apps) | $0 | $38 | -$38 |
-| **Net Savings (50 apps)** | | | **$4,462** |
-| **ROI** | | | **11,600%** |
 
 ### What You Get for $0.50-$0.75 per Application
 
@@ -114,107 +172,32 @@ The tool itself is free. The only cost is AI API usage (Claude Sonnet 4).
 - ✅ Funding source recommendation (HOME/CDBG)
 - ✅ Export-ready Excel output
 
-## You Are Always in Control
-
-**Human-in-the-Loop**: The AI assists, but YOU decide.
-
-- **Review Every Score**: All AI-generated scores are visible and can be adjusted
-- **Read the Reasoning**: AI explains why it assigned each score
-- **Override Anytime**: Change any score with a single click
-- **Final Approval**: Nothing is submitted or finalized without your explicit action
-
-## How It Works
-
-The AI is configured to produce consistent, repeatable results:
-
-1. Reads the application text you provide
-2. Compares it against the scoring template criteria
-3. Assigns scores based on how well the application meets each criterion
-4. Writes clear explanations for each score
-5. Presents everything for your review
-
-**Deterministic scoring** is achieved by using structured rubrics with defined point values and setting AI parameters to minimize randomness (temperature = 0).
-
-## Security
-
-**No External Servers = No External Attack Vectors**
-
-- **Runs in Your Browser**: Single HTML file that runs locally
-- **No Data Storage**: Application data is not saved to any external server
-- **Direct API Connection**: Browser connects directly to Anthropic's secure API
-- **No Middleware**: No third-party servers process or see your data
-- **Your Network**: Works entirely within your organization's network security
-
-## Administrator Setup
-
-To pre-configure a shared API key for your team:
-
-1. Get an API Key at [console.anthropic.com](https://console.anthropic.com)
-2. Set spending limits in the Anthropic Console
-3. Open `NOFA_AI_Evaluator_v7.21.html` in a text editor
-4. Find `SHARED_API_KEY` in the configuration
-5. Replace the empty quotes with your API key:
-
-```javascript
-const SHARED_API_KEY = 'sk-ant-api03-your-key-here';
-```
-
-Distribute the modified file to your team.
+---
 
 ## Version History
 
 | Version | Changes |
 |---------|---------|
-| v7.21 | **Keyboard Shortcuts & Undo**: Press 0-4 keys to quickly assign scores; Ctrl+Z to undo; Undo button with 50-change history; Analyze button for individual criteria after stopping Auto-Analyze; Sticky headers with score summaries; Compact Pro Mode header; Notes export controls. **Bug Fixes**: Fixed page jumping during Auto-Analyze; Fixed modal cutoff issues; Fixed bottom nav visibility |
-| v7.20 | **Counter-Arguments**: AI now generates counter-arguments for each score to help reviewers consider alternative perspectives |
-| v7.19 | **Word Document Support**: Added Mammoth.js library to parse .docx files directly in browser; Auto-fetch now extracts text from Word documents for AI analysis; Legacy .doc files show helpful message to convert to .docx or PDF; Better status indicators for unsupported file formats |
-| v7.18 | **AI-Powered Document Classification**: Documents are now automatically classified by content analysis, not just filename; AI reads document text and categorizes it (audit, budget, board docs, etc.) even when naming conventions vary; Purple "🤖 AI Classified" badge shows when a document was intelligently categorized; Works globally across different document naming styles and formats |
-| v7.17 | **Smart Document Recommendations**: Each evaluation criterion now shows which supporting documents are relevant; Hints like "⭐ Review: Audit/Financial, Budget" guide reviewers to the right documents; Click to see all related documents with explanations of why they matter for scoring; Priority indicators highlight must-review documents |
-| v7.16 | **Linked Documents in PDF Viewer**: Added collapsible Linked Documents panel directly in PDF viewer; Reviewers can click any link to open supporting documents in new tabs; Documents grouped by type (Audit, Budget, Exhibit, etc.); Shows fetch status and includes auto-fetch button for one-click analysis |
-| v7.15 | **Linked Documents Analysis**: Automatically extracts hyperlinks from uploaded application PDFs; Displays linked documents panel showing all referenced documents (audits, budgets, exhibits); Auto-fetch feature retrieves and analyzes linked PDFs; AI evaluation now includes content from linked supporting documents for more accurate scoring |
-| v7.14 | **PDF Zoom Scroll Fix**: Fixed issue where zoomed PDF couldn't scroll to see left edge; PDF now properly scrolls in all directions when zoomed |
-| v7.13 | **PDF Viewer Fix**: Fixed bug where Visual PDF viewer displayed pages upside-down on first load; Removed double-rotation issue in PDF rendering |
-| v7.12 | **Nonprofit-Appropriate Evaluation**: AI prompts now use nonprofit financial evaluation standards; Fiscal stability scoring updated to assess audit findings, funding diversity, and reserve levels instead of profit metrics; Leveraging criteria recognize multi-year grant relationships and contract renewals; System prompt includes nonprofit context to prevent penalizing organizations for normal grant-seeking behavior |
-| v7.11 | **Reference Documents Upload**: Upload Funding Priorities and NOFA Guidelines PDFs; Documents stored locally and persist across sessions; AI cross-references applications against actual County priorities; Cite specific priority names in scoring reasoning |
-| v7.10 | AI-powered funding source auto-detection; Analyzes application to suggest HOME, CDBG, or HOME+CDBG with reasoning; One-click "Apply AI Suggestion" button |
-| v7.9 | Fixed PDF orientation bug (respects page rotation metadata); Added funding source help tooltip explaining where to find info in applications |
-| v7.8 | Added re-upload prompt for restored sessions; Explains PDF files can't be stored in browser and provides easy re-upload button |
-| v7.7 | Fixed visual PDF viewer blank pages issue; Better error handling and PDF document reload |
-| v7.6 | Fixed scroll behavior - prevents background scrolling when mouse is over modal/PDF viewer |
-| v7.5 | Added Escape key and click-outside to close all modals; Shows "Pending analysis" in diagnostics when document loaded but not yet analyzed |
-| v7.4 | Added visual PDF viewer with full graphics/charts display; Toggle between Visual and Text views; Zoom controls (50%-300%); All page navigation features work in both modes |
-| v7.3 | Performance optimizations: parallel PDF page extraction (5x faster), parallel API batch processing (3 concurrent calls), retry logic with exponential backoff, in-memory caching, debounced rendering |
-| v7.2 | Added automatic vision detection - system now scans PDFs for charts/graphs and auto-enables vision analysis when visual content is detected |
-| v7.1 | Added Vision Analysis capability for charts, graphs, tables, and visual elements; Updated diagnostics panel to show vision status |
-| v7 | Fixed duplicate file upload bug; Fixed "Back to Evidence" navigation; Added page number input for direct navigation; Improved AI analysis to include attachments/exhibits content; Added admin diagnostics panel |
-| v6 | Initial public release with full AI-assisted scoring workflow |
+| v7.21 | Keyboard shortcuts (0-4 keys), Ctrl+Z undo, 50-change history, Analyze button for individual criteria, sticky headers, compact Pro Mode |
+| v7.20 | Counter-arguments for each score |
+| v7.19 | Word document (.docx) support |
+| v7.18 | AI-powered document classification |
+| v7.17 | Smart document recommendations per criterion |
+| v7.16 | Linked documents panel in PDF viewer |
+| v7.15 | Automatic linked document extraction and analysis |
+| v7.14 | PDF zoom scroll fix |
+| v7.13 | PDF viewer orientation fix |
+| v7.12 | Nonprofit-appropriate evaluation standards |
+| v7.11 | Reference documents upload (Funding Priorities, NOFA Guidelines) |
+| v7.10 | AI-powered funding source auto-detection |
 
-## What AI Does vs. Does NOT Do
-
-| What AI Does | What AI Does NOT Do |
-|--------------|---------------------|
-| Reads and analyzes text | Make final funding decisions |
-| Analyzes charts, graphs, and tables (with Vision enabled) | Override your judgment |
-| Extracts and analyzes linked supporting documents | Store or share your data |
-| Detects and suggests appropriate funding source | Submit anything automatically |
-| Applies consistent criteria | Replace human expertise |
-| Explains its reasoning | |
-| Suggests scores for review | |
-| Saves you time | |
-
-## Development
-
-| Metric | Value |
-|--------|-------|
-| Lines of Code | 8,500+ |
-| Development Versions | 21 minor releases (v7.x series) |
-| Evaluation Criteria | 15+ unique scoring areas |
-| Template Support | Flexible (any NOFA format) |
-| Supported Documents | PDF, DOCX, TXT, HTML |
-| External Libraries | PDF.js, Mammoth.js, SheetJS |
+---
 
 ## Demo Video
+
 For a full walkthrough, see the [NOFA AI Analyzer Video](https://github.com/bbuxton0823/nofa_ai_analyzer/releases/download/v7.21/NOFA.AI.Video.mov) in the Releases section.
+
+---
 
 ## License
 
