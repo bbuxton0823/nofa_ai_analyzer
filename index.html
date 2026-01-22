@@ -14,7 +14,7 @@
                               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
                               line-height: 1.6;
                               color: #333;
-                              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                              background: #475569;
                               min-height: 100vh;
                 }
                 .hero {
@@ -61,21 +61,26 @@
                               box-shadow: 0 10px 40px rgba(0,0,0,0.1);
                 }
                 .card h2 {
-                              color: #667eea;
+                              color: #334155;
                               margin-bottom: 20px;
                               font-size: 1.8rem;
                 }
                 .benefits-grid {
                               display: grid;
-                              grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                              grid-template-columns: repeat(2, 1fr);
                               gap: 20px;
                               margin-top: 20px;
+                }
+                @media (max-width: 600px) {
+                              .benefits-grid {
+                                            grid-template-columns: 1fr;
+                              }
                 }
                 .benefit-item {
                               background: #f8f9fa;
                               padding: 20px;
                               border-radius: 8px;
-                              border-left: 4px solid #667eea;
+                              border-left: 4px solid #475569;
                 }
                 .benefit-item h3 {
                               color: #333;
@@ -95,7 +100,7 @@
                 .step::before {
                               counter-increment: step-counter;
                               content: counter(step-counter);
-                              background: #667eea;
+                              background: #475569;
                               color: white;
                               width: 30px;
                               height: 30px;
@@ -118,22 +123,43 @@
                 }
                 .version-badge {
                               display: inline-block;
-                              background: rgba(255,255,255,0.2);
+                              background: rgba(255,255,255,0.15);
                               padding: 5px 15px;
                               border-radius: 20px;
                               font-size: 0.9rem;
                               margin-bottom: 20px;
                 }
+                .demo-section {
+                              text-align: center;
+                              padding: 40px 20px;
+                              background: rgba(255,255,255,0.1);
+                }
+                .demo-section h2 {
+                              color: white;
+                              margin-bottom: 20px;
+                              font-size: 1.8rem;
+                }
+                .demo-gif {
+                              max-width: 90%;
+                              max-height: 500px;
+                              border-radius: 12px;
+                              box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+                }
             </style>
   </head>
   <body>
         <div class="hero">
-                  <span class="version-badge">v7.21 - Latest Release</span>span>
+                  <span class="version-badge">v7.21 - Latest Release</span>
                   <h1>NOFA AI Evaluator</h1>
                 <p>A browser-based tool that helps staff evaluate grant applications faster and more consistently. Runs entirely on your computer with no external servers, keeping all data secure.</p>
-                <a href="https://github.com/bbuxton0823/nofa_ai_analyzer/releases/latest" class="download-btn">Download Now</a>a>
-        </div>div>
-  
+                <a href="https://github.com/bbuxton0823/nofa_ai_analyzer/releases/latest" class="download-btn">Download Now</a>
+        </div>
+
+      <div class="demo-section">
+              <h2>See It In Action</h2>
+              <img src="demo.gif" alt="NOFA AI Evaluator Demo" class="demo-gif">
+      </div>
+
       <div class="container">
               <div class="card">
                           <h2>Why This Tool?</h2>
@@ -141,22 +167,110 @@
                                           <div class="benefit-item">
                                                               <h3>Increase Capacity</h3>
                                                               <p>Review more applications that serve our community</p>
-                                          </div>div>
+                                          </div>
                                           <div class="benefit-item">
                                                               <h3>Improve Consistency</h3>
                                                               <p>Same criteria applied fairly to every application</p>
-                                          </div>div>
+                                          </div>
                                           <div class="benefit-item">
                                                               <h3>Save Time</h3>
                                                               <p>Reduce manual data entry and repetitive analysis</p>
-                                          </div>div>
+                                          </div>
                                           <div class="benefit-item">
                                                               <h3>Focus on What Matters</h3>
                                                               <p>More time for judgment calls, less on paperwork</p>
-                                          </div>div>
-                          </div>div>
-              </div>div>
-      
+                                          </div>
+                          </div>
+              </div>
+
+              <div class="card">
+                          <h2>Getting Your Anthropic API Key</h2>
+                          <p style="margin-bottom: 20px;">This tool uses Claude AI from Anthropic to analyze grant applications. You'll need an API key to get started. Your API key is stored locally in your browser and is only sent directly to Anthropic's servers.</p>
+
+                          <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #bae6fd;">
+                                          <h3 style="color: #0369a1; margin-bottom: 10px;">🏢 For Agency/Team Use</h3>
+                                          <p style="color: #0c4a6e; margin: 0;">If your organization (e.g., <a href="https://www.smcgov.org/housing/hcdc" target="_blank" style="color: #0369a1; font-weight: bold;">San Mateo County Department of Housing</a>) has already set up an Anthropic account, your administrator will provide you with a shared API key. Simply skip to Step 4 below and enter the key provided by your admin. All usage will be billed to your agency's account.</p>
+                          </div>
+
+                          <h3 style="color: #475569; margin-bottom: 15px;">For Individual Setup or Administrators:</h3>
+                          <div class="steps">
+                                          <div class="step">
+                                                              <div><strong>Create an Anthropic Account:</strong> Go to <a href="https://console.anthropic.com/" target="_blank" style="color: #475569; font-weight: bold;">console.anthropic.com</a> and sign up for an account. You'll need to verify your phone number.</div>
+                                          </div>
+                                          <div class="step">
+                                                              <div><strong>Set Up Billing:</strong> Navigate to <a href="https://console.anthropic.com/settings/billing" target="_blank" style="color: #475569; font-weight: bold;">console.anthropic.com/settings/billing</a> to add a payment method and purchase credits. The API requires credits to function — we recommend starting with $5-10 for testing, or more for team usage.</div>
+                                          </div>
+                                          <div class="step">
+                                                              <div><strong>Create an API Key:</strong> Go to <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color: #475569; font-weight: bold;">console.anthropic.com/settings/keys</a>, click "Create Key", give it a name (e.g., "NOFA Evaluator - County Team"), and copy the key. Administrators can share this key with authorized staff.</div>
+                                          </div>
+                                          <div class="step">
+                                                              <div><strong>Enter in the Tool:</strong> Open the NOFA AI Evaluator, click "Settings", and paste your API key in the "Anthropic API Key" field.</div>
+                                          </div>
+                          </div>
+
+                          <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #0891b2;">
+                                          <strong style="color: #0891b2;">💡 Important:</strong> Your API key starts with "sk-ant-" and should be kept private within your organization. The API will not work until the account has credits — billing must be set up first!
+                          </div>
+
+                          <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin-top: 25px; border: 1px solid #fcd34d;">
+                                          <h3 style="color: #92400e; margin-bottom: 12px;">🔧 Administrator: Pre-Configure for Your Team</h3>
+                                          <p style="color: #78350f; margin-bottom: 15px;">To distribute a ready-to-use version with the API key already embedded (so staff don't need to configure anything):</p>
+                                          <ol style="margin: 0; padding-left: 20px; color: #78350f;">
+                                                          <li style="margin-bottom: 10px;">Download the <code style="background: #fde68a; padding: 2px 6px; border-radius: 4px;">NOFA_AI_Evaluator_v7.21.html</code> file</li>
+                                                          <li style="margin-bottom: 10px;">Open it in a text editor (Notepad, VS Code, etc.)</li>
+                                                          <li style="margin-bottom: 10px;">Search for <code style="background: #fde68a; padding: 2px 6px; border-radius: 4px;">SHARED_API_KEY</code></li>
+                                                          <li style="margin-bottom: 10px;">Replace the empty quotes with your API key:<br>
+                                                              <code style="background: #fde68a; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 5px;">const SHARED_API_KEY = 'sk-ant-api03-your-key-here';</code></li>
+                                                          <li style="margin-bottom: 10px;">Save the file and distribute to your team via shared drive, email, or intranet</li>
+                                          </ol>
+                                          <p style="color: #78350f; margin-top: 15px; font-size: 0.95rem;"><strong>Note:</strong> Users can still override this key in Settings if needed. Keep the pre-configured file internal to your organization.</p>
+                          </div>
+              </div>
+
+              <div class="card">
+                          <h2>Security & Privacy</h2>
+                          <p style="margin-bottom: 20px; font-size: 1.1rem;">Your data security is our top priority. This tool was designed from the ground up with privacy and security in mind.</p>
+
+                          <div class="benefits-grid">
+                                          <div class="benefit-item" style="border-left-color: #059669;">
+                                                              <h3 style="color: #059669;">🔒 100% Local Processing</h3>
+                                                              <p>The entire application runs in your browser. No data is ever sent to our servers because we don't have any servers. Your files never leave your computer.</p>
+                                          </div>
+                                          <div class="benefit-item" style="border-left-color: #059669;">
+                                                              <h3 style="color: #059669;">🔐 Secure API Communication</h3>
+                                                              <p>Your API key and application data are sent directly to Anthropic's secure servers using encrypted HTTPS connections. We never see or store this information.</p>
+                                          </div>
+                                          <div class="benefit-item" style="border-left-color: #059669;">
+                                                              <h3 style="color: #059669;">💾 Local Storage Only</h3>
+                                                              <p>Your API key is stored in your browser's local storage on your device. It never travels through any third-party servers or cloud services.</p>
+                                          </div>
+                                          <div class="benefit-item" style="border-left-color: #059669;">
+                                                              <h3 style="color: #059669;">👁️ Full Transparency</h3>
+                                                              <p>This is open-source software. You can inspect every line of code on GitHub to verify exactly how your data is handled.</p>
+                                          </div>
+                          </div>
+
+                          <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin-top: 25px; border: 1px solid #bbf7d0;">
+                                          <h3 style="color: #166534; margin-bottom: 12px;">What This Means For You</h3>
+                                          <ul style="margin: 0; padding-left: 20px; color: #166534;">
+                                                          <li style="margin-bottom: 8px;"><strong>Grant applications stay private</strong> — Sensitive applicant information never touches external servers except Anthropic's AI</li>
+                                                          <li style="margin-bottom: 8px;"><strong>No data collection</strong> — We don't track usage, collect analytics, or store any information about you or your work</li>
+                                                          <li style="margin-bottom: 8px;"><strong>You control your API key</strong> — Clear it anytime from Settings, and you can revoke it from your Anthropic console</li>
+                                                          <li style="margin-bottom: 8px;"><strong>Offline capable</strong> — The application itself works offline; only AI evaluation requires an internet connection</li>
+                                          </ul>
+                          </div>
+
+                          <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #f59e0b;">
+                                          <strong style="color: #b45309;">⚠️ Best Practices:</strong>
+                                          <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #92400e;">
+                                                          <li>Never share your API key or commit it to version control</li>
+                                                          <li>Regularly rotate your API key from the Anthropic console</li>
+                                                          <li>Set spending limits in your Anthropic account to control costs</li>
+                                                          <li>Use a dedicated API key for this tool (don't reuse keys across applications)</li>
+                                          </ul>
+                          </div>
+              </div>
+
               <div class="card">
                           <h2>Quick Start</h2>
                           <div class="steps">
@@ -181,33 +295,33 @@
               <div class="card">
                           <h2>Key Benefits</h2>
                           <table style="width:100%; border-collapse: collapse;">
-                                          <tr style="background:#667eea; color:white;">
-                                              <th style="padding:12px; text-align:left;">Benefit</th>th>
-                                              <th style="padding:12px; text-align:left;">What It Means</th>th>
-                                          </tr>tr>
+                                          <tr style="background:#475569; color:white;">
+                                              <th style="padding:12px; text-align:left;">Benefit</th>
+                                              <th style="padding:12px; text-align:left;">What It Means</th>
+                                          </tr>
                                           <tr style="background:#f8f9fa;">
-                                              <td style="padding:12px;">Faster Reviews</td>td>
-                                              <td style="padding:12px;">What took hours now takes minutes</td>td>
-                                          </tr>tr>
+                                              <td style="padding:12px;">Faster Reviews</td>
+                                              <td style="padding:12px;">What took hours now takes minutes</td>
+                                          </tr>
                                           <tr>
-                                                                <td style="padding:12px;">Fair Scoring</td>td>
-                                                                <td style="padding:12px;">Every application evaluated by the same standards</td>td>
+                                                                <td style="padding:12px;">Fair Scoring</td>
+                                                                <td style="padding:12px;">Every application evaluated by the same standards</td>
                                           </tr>
                                             <tr style="background:#f8f9fa;">
-                                                                  <td style="padding:12px;">Complete Records</td>td>
-                                                                  <td style="padding:12px;">Automatic documentation of all evaluations</td>td>
+                                                                  <td style="padding:12px;">Complete Records</td>
+                                                                  <td style="padding:12px;">Automatic documentation of all evaluations</td>
                                             </tr>
                                             <tr>
-                                                                  <td style="padding:12px;">No Learning Curve</td>td>
-                                                                  <td style="padding:12px;">Simple interface anyone can use in minutes</td>td>
+                                                                  <td style="padding:12px;">No Learning Curve</td>
+                                                                  <td style="padding:12px;">Simple interface anyone can use in minutes</td>
                                             </tr>
-                          </table>table>
+                          </table>
               </div>
       </div>
 
         <div class="footer">
-                  <p>View the full documentation and source code on <a href="https://github.com/bbuxton0823/nofa_ai_analyzer">GitHub</a>a></p>
+                  <p>View the full documentation and source code on <a href="https://github.com/bbuxton0823/nofa_ai_analyzer">GitHub</a></p>
                 <p style="margin-top:10px; opacity:0.8;">No installation required - just download and open in your browser</p>
         </div>
   </body>
-</html>html>
+</html>
