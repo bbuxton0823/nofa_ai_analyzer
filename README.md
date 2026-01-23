@@ -202,4 +202,4 @@ For a full walkthrough, see the [NOFA AI Analyzer Video](https://github.com/bbux
 
 ## License
 
-Internal use only.
+MIT License - see [LICENSE](LICENSE) for details.
